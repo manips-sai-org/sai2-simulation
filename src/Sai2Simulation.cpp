@@ -13,11 +13,9 @@
 #include <math/CMatrix3d.h> // chai math library
 #include <stdexcept>
 #include <map>
+#include <set>
 
 #include <iostream>
-
-using namespace std;
-using namespace chai3d;
 
 namespace Simulation {
 
@@ -256,7 +254,7 @@ void Sai2Simulation::setJointTorque(const std::string& robot_name,
 // NOTE: currently unsupported due to lack of support in dynamics3d
 void Sai2Simulation::getJointTorques(const std::string& robot_name,
 											Eigen::VectorXd& tau_ret) const {
-	cerr << "Unsupported function Sai2Simulation::getJointTorques" << endl;
+	std::cerr << "Unsupported function Sai2Simulation::getJointTorques" << std::endl;
 	abort();
 }
 
@@ -289,7 +287,7 @@ void Sai2Simulation::integrate(double timestep) {
 void Sai2Simulation::showContactInfo()
 {
 
-    list<cDynamicBase*>::iterator i;
+    std::list<cDynamicBase*>::iterator i;
     for(i = _world->m_dynamicObjects.begin(); i != _world->m_dynamicObjects.end(); ++i)
     {
         cDynamicBase* object = *i;
@@ -315,6 +313,34 @@ void Sai2Simulation::showContactInfo()
     }
 }
 
+void Sai2Simulation::showLinksInContact(const std::string robot_name)
+{
+
+    std::list<cDynamicBase*>::iterator i;
+    for(i = _world->m_dynamicObjects.begin(); i != _world->m_dynamicObjects.end(); ++i)
+    {
+        cDynamicBase* object = *i;
+        if(object->m_name == robot_name)
+        {
+	    	int num_contacts = object->m_dynamicContacts->getNumContacts();
+	        if(num_contacts > 0)
+	        {
+		    	std::set<std::string> contact_links;
+	        	std::cout << "contacts on robot : " << robot_name << std::endl;
+		    	for(int k=0; k < num_contacts; k++)
+		    	{
+		    		contact_links.insert(object->m_dynamicContacts->getContact(k)->m_dynamicLink->m_name);
+		    	}
+		        for(std::set<std::string>::iterator it = contact_links.begin() ; it != contact_links.end() ; ++it)
+		        {
+		        	std::cout << (*it) << std::endl;
+		        }
+		        std::cout << std::endl;
+	        }
+        }
+    }
+}
+
 void Sai2Simulation::getContactList(std::vector<Eigen::Vector3d>& contact_points, std::vector<Eigen::Vector3d>& contact_forces, 
 	const::std::string& robot_name, const std::string& link_name) 
 {
@@ -323,7 +349,7 @@ void Sai2Simulation::getContactList(std::vector<Eigen::Vector3d>& contact_points
 	Eigen::Vector3d current_position = Eigen::Vector3d::Zero();
 	Eigen::Vector3d current_force = Eigen::Vector3d::Zero();
 
-	list<cDynamicBase*>::iterator i;
+	std::list<cDynamicBase*>::iterator i;
     for(i = _world->m_dynamicObjects.begin(); i != _world->m_dynamicObjects.end(); ++i)
     {
     	cDynamicBase* object = *i;

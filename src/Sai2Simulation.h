@@ -162,6 +162,13 @@ public:
      void showContactInfo();
 
      /**
+      * @brief Shows which links of the given robot are in contact
+      * 
+      * @param robot_name the robot name
+      */
+     void showLinksInContact(const std::string robot_name);
+
+     /**
       * @brief      Gets a vector of contact points and the corresponding contact forces at a gicen link of a given object. Gives everything in base frame.
       *
       * @param      contact_points  The contact points vector to be returned

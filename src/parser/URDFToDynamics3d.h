@@ -13,7 +13,7 @@
 #include <string>
 #include "dynamics3d.h"
 
-namespace Simulation {
+namespace Sai2Simulation {
 /**
  * @brief Parse a URDF file and populate a dynamics3d world model from it.
  * @param filename URDF world model file to parse.
@@ -24,6 +24,7 @@ void URDFToDynamics3dWorld(const std::string& filename,
 							cDynamicWorld* world,
 							std::map<std::string , Eigen::Vector3d>& _dyn_object_base_pos,
 							std::map<std::string , Eigen::Quaterniond>& _dyn_object_base_rot,
+							std::map<std::string, std::string>& robot_filenames,
 							bool verbose);
 
 /**
@@ -40,6 +41,6 @@ void URDFToDynamics3dRobot(const std::string& filename,
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 
-}
+} // namespace Sai2Simulation
 
 #endif //URDF_TO_DYNAMICS3D_H

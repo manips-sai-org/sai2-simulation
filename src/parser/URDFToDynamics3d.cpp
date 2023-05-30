@@ -39,7 +39,7 @@ using namespace chai3d;
 #define CDYN_ERROR_EPSILON 0.0001
 #define CDYN_DEFAULT_MAT_RESTITUTION 0.9
 
-namespace Simulation {
+namespace Sai2Simulation {
 
 // load link collision properties from urdf link to dynamics3d link
 // TODO: working dir default should be "", but this requires checking
@@ -160,6 +160,7 @@ void URDFToDynamics3dWorld(const std::string& filename,
 							cDynamicWorld* world, 
 							std::map<std::string , Eigen::Vector3d>& _dyn_object_base_pos,
 							std::map<std::string , Eigen::Quaterniond>& _dyn_object_base_rot, 
+							std::map<std::string, std::string>& robot_filenames,
 							bool verbose) {
 	// load world urdf file
 	ifstream model_file (filename);
@@ -220,6 +221,12 @@ void URDFToDynamics3dWorld(const std::string& filename,
 
 		// overwrite robot name with custom name for this instance
 		robot->m_name = robot_spec->name;
+		// fill robot filenames
+		auto it = robot_filenames.find(robot->m_name);
+		if(it != robot_filenames.end()) {
+			throw std::runtime_error("Different robots cannot have the same name in the world");
+		}
+		robot_filenames[robot->m_name] = robot_spec->model_working_dir + "/" + robot_spec->model_filename;
 	}
 
 	// parse static meshes

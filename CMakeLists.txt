@@ -42,6 +42,7 @@ include_directories("/usr/local/include")
 
 # find dependencies
 # - chai3d
+set(OpenGL_GL_PREFERENCE "GLVND")
 find_package (CHAI3D REQUIRED)
 include_directories(${CHAI3D_INCLUDE_DIRS})
 link_directories (${CHAI3D_LIBRARY_DIRS})
@@ -51,6 +52,14 @@ add_definitions (${CHAI3D_DEFINITIONS})
 find_package (SAI2-URDF REQUIRED)
 include_directories(${SAI2-URDF_INCLUDE_DIRS})
 add_definitions(${SAI2-URDF_DEFINITIONS})
+
+# include Sai2-Model
+find_package(SAI2-MODEL REQUIRED)
+include_directories(${SAI2-MODEL_INCLUDE_DIRS})
+
+# - rbdl
+find_package(RBDL QUIET)
+include_directories(${RBDL_INCLUDE_DIR})
 
 # optional settings
 include (${PROJECT_SOURCE_DIR}/CMakeOptions.txt OPTIONAL)
@@ -65,11 +74,11 @@ if (CMAKE_SYSTEM_NAME MATCHES Windows)
 # Linux global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
   add_definitions (-DLINUX)
-  set (CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS}                 -std=c++0x")
-  set (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG}           -std=c++0x")
-  set (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL}      -std=c++0x")
-  set (CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}         -std=c++0x")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}  -std=c++0x")
+  set (CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS}                 -std=c++11")
+  set (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG}           -std=c++11")
+  set (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL}      -std=c++11")
+  set (CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}         -std=c++11")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}  -std=c++11")
   set (CMAKE_C_FLAGS                  "${CMAKE_C_FLAGS}                  ")
   set (CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG}            ")
   set (CMAKE_C_FLAGS_MINSIZEREL       "${CMAKE_C_FLAGS_MINSIZEREL}       ")
@@ -80,11 +89,11 @@ elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
 # Mac OS X global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Darwin)
   add_definitions (-DMACOSX)
-  set (CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS}                -Wno-deprecated -std=c++0x -stdlib=libc++")
-  set (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG}          -Wno-deprecated -std=c++0x -stdlib=libc++")
-  set (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL}     -Wno-deprecated -std=c++0x -stdlib=libc++")
-  set (CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}        -Wno-deprecated -std=c++0x -stdlib=libc++")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-deprecated -std=c++0x -stdlib=libc++")
+  set (CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS}                -Wno-deprecated -std=c++11 -stdlib=libc++")
+  set (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG}          -Wno-deprecated -std=c++11 -stdlib=libc++")
+  set (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL}     -Wno-deprecated -std=c++11 -stdlib=libc++")
+  set (CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}        -Wno-deprecated -std=c++11 -stdlib=libc++")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-deprecated -std=c++11 -stdlib=libc++")
   set (CMAKE_C_FLAGS                  "${CMAKE_C_FLAGS}                  -Wno-deprecated")
   set (CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG}            -Wno-deprecated")
   set (CMAKE_C_FLAGS_MINSIZEREL       "${CMAKE_C_FLAGS_MINSIZEREL}       -Wno-deprecated")
@@ -105,10 +114,12 @@ include_directories (${PROJECT_SOURCE_DIR}/external/qhull/src)
 # static exposed API source files
 file (GLOB_RECURSE source_chai3d ${PROJECT_SOURCE_DIR}/src/chai3d/*.cpp)
 file (GLOB_RECURSE source_parser ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
+file (GLOB_RECURSE source_force_sensor ${PROJECT_SOURCE_DIR}/src/force_sensor_sim/*.cpp)
 set (source_sai2_simulation
   ${PROJECT_SOURCE_DIR}/src/Sai2Simulation.cpp
   ${source_chai3d}
   ${source_parser}
+  ${source_force_sensor}
 )
 
 # static library external dependencies source files
@@ -134,7 +145,11 @@ add_library (sai2-simulation STATIC ${source_sai2_simulation} ${source_qhull})
 
 # library exports
 set (SAI2-SIMULATION_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
-set (SAI2-SIMULATION_LIBRARIES sai2-simulation ${CORE_LIB_DIR}/libsai2-simulation-core.a ${CHAI3D_LIBRARIES})
+set (SAI2-SIMULATION_LIBRARIES sai2-simulation 
+      ${CORE_LIB_DIR}/libsai2-simulation-core.a 
+      ${CHAI3D_LIBRARIES}
+      ${SAI2-MODEL_LIBRARIES}
+)
 set (SAI2-SIMULATION_DEFINITIONS ${PROJECT_DEFINITIONS})
 
 

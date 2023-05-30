@@ -17,7 +17,7 @@
 
 #include <iostream>
 
-namespace Simulation {
+namespace Sai2Simulation {
 
 // ctor
 Sai2Simulation::Sai2Simulation(const std::string& path_to_world_file,
@@ -28,12 +28,22 @@ Sai2Simulation::Sai2Simulation(const std::string& path_to_world_file,
 	_world = new cDynamicWorld(NULL);
 	assert(_world);
 
-	URDFToDynamics3dWorld(path_to_world_file, _world, _dyn_object_base_pos, _dyn_object_base_rot, verbose);
+	URDFToDynamics3dWorld(path_to_world_file, _world, _dyn_object_base_pos, _dyn_object_base_rot, _robot_filenames, verbose);
 
 	// enable dynamics for all robots in this world
 	// TODO: consider pushing up to the API?
 	for (auto robot: _world->m_dynamicObjects) {
 		robot->enableDynamics(true);
+	}
+
+	// create robot models
+	for(const auto& pair : _robot_filenames) {
+		const auto& robot_name = pair.first;
+		const auto& robot_file = pair.second;
+		_robot_models[robot_name] =
+			std::make_shared<Sai2Model::Sai2Model>(
+				robot_file, false, getRobotBaseTransform(robot_name),
+				_world->getGravity().eigen());
 	}
 
 	// create a dof map
@@ -281,7 +291,22 @@ void Sai2Simulation::getJointAccelerations(const std::string& robot_name,
 
 // integrate ahead
 void Sai2Simulation::integrate(double timestep) {
+	// update dynamic world
 	_world->updateDynamics(timestep);
+	// update robot models
+	for(auto robot_name_model : _robot_models) {
+		Eigen::VectorXd q_robot = Eigen::VectorXd::Zero(robot_name_model.second->dof());
+		getJointPositions(robot_name_model.first, q_robot);
+		robot_name_model.second->set_q(q_robot);
+		robot_name_model.second->updateKinematics();
+	}
+	// update force sensors if any
+	for(auto robot_name_sensors : _force_sensors) {
+		std::map<std::string, std::shared_ptr<ForceSensorSim>> robot_sensors = robot_name_sensors.second;
+		for(auto link_name_sensor : robot_sensors) {
+			link_name_sensor.second->update(getDynamicWorld());
+		}
+	}
 }
 
 void Sai2Simulation::showContactInfo()
@@ -344,48 +369,78 @@ void Sai2Simulation::showLinksInContact(const std::string robot_name)
 void Sai2Simulation::getContactList(std::vector<Eigen::Vector3d>& contact_points, std::vector<Eigen::Vector3d>& contact_forces, 
 	const::std::string& robot_name, const std::string& link_name) 
 {
-	contact_points.clear();
-	contact_forces.clear();
-	Eigen::Vector3d current_position = Eigen::Vector3d::Zero();
-	Eigen::Vector3d current_force = Eigen::Vector3d::Zero();
-
-	std::list<cDynamicBase*>::iterator i;
-    for(i = _world->m_dynamicObjects.begin(); i != _world->m_dynamicObjects.end(); ++i)
-    {
-    	cDynamicBase* object = *i;
-    	// only consider the desired object
-    	if(object->m_name != robot_name)
-    	{
-    		continue;
-    	}
-    	int num_contacts = object->m_dynamicContacts->getNumContacts();
-    	// only consider if the oject is contacting something
-        if(num_contacts > 0)
-        {
-        	for(int k=0; k < num_contacts; k++)
-	    	{
-	        	cDynamicContact* contact = object->m_dynamicContacts->getContact(k);
-	        	// only consider contacts at the desired link
-                if(contact==NULL || contact->m_dynamicLink->m_name != link_name)
-	        	{
-	        		continue;
-	        	}
-	        	// copy chai3d vector to eigen vector
-	        	for(int l=0; l<3; l++)
-	        	{
-		        	current_position(l) = contact->m_globalPos(l);
-		        	// the friction force is inverted for some reason. Need to substract it to get a coherent result.
-		        	current_force(l) = contact->m_globalNormalForce(l) - contact->m_globalFrictionForce(l);
-	        	}
-	        	// reverse the sign to get the list of forces applied to the considered object
-	        	contact_points.push_back(current_position);
-	        	contact_forces.push_back(-current_force);
-	        }
-        }
-
-
-    }
+	_world->getContactList(contact_points, contact_forces, robot_name, link_name);
 }
+
+void Sai2Simulation::addSimulatedForceSensor(
+    const std::string& robot_name, const std::string& link_name,
+    const Eigen::Affine3d transform_in_link) {
+	if (!robotAndLinkExists(robot_name, link_name)) {
+		std::cout <<
+			"\n\nWARNING: trying to add a force sensor to an unexisting robot or link in "
+			"Sai2Simulation::addSimulatedForceSensor\n" << std::endl;
+		return;
+	}
+
+	auto it_robot_name = _force_sensors.find(robot_name);
+	if(it_robot_name == _force_sensors.end()) {
+		std::map<std::string, std::shared_ptr<ForceSensorSim>> sensors;
+		sensors[link_name] = std::make_shared<ForceSensorSim>(robot_name, link_name, transform_in_link, _robot_models[robot_name]);
+		_force_sensors[robot_name] = sensors;
+	} else {
+		auto it_link_name = it_robot_name->second.find(link_name);
+			if (it_link_name != it_robot_name->second.end()) {
+			std::cout
+				<< "\n\nWARNING: only one force sensor is supported per "
+					"link in Sai2Simulation::addSimulatedForceSensor. Not "
+					"adding the second one\n"
+				<< std::endl;
+			return;
+			}
+			it_robot_name->second[link_name] =
+				std::make_shared<ForceSensorSim>(
+					robot_name, link_name, transform_in_link,
+					_robot_models[robot_name]);
+        }
+}
+
+bool Sai2Simulation::forceSensorExists(const std::string& robot_name, const std::string& link_name) const {
+	if (!robotAndLinkExists(robot_name, link_name)) {
+		std::cout << 
+			"robot or link that doesn't exists in "
+			"Sai2Simulation::findForceSensor" << std::endl;
+			return false;
+	}
+	auto it_robot_name = _force_sensors.find(robot_name);
+	if(it_robot_name == _force_sensors.end()) {
+		std::cout << "no force sensors were added on the robot [" << robot_name << "] in the simulation" << std::endl;
+		return false;
+	}
+	auto it_link_name = it_robot_name->second.find(link_name);
+	if (it_link_name == it_robot_name->second.end()) {
+		std::cout << "no force sensors were added on the link ["
+					<< link_name << "] for the robot [" << robot_name
+					<< "] in the simulation" << std::endl;
+		return false;
+	}
+	return true; 
+}
+
+
+bool Sai2Simulation::robotAndLinkExists(const std::string& robot_name, const std::string link_name) const {
+	auto robot = _world->getBaseNode(robot_name);
+	if(robot == NULL) {
+		return false;
+	}
+	if(link_name != "") {
+		auto link = robot->getLink(link_name);
+		if(link == NULL) {
+			return false;
+		}
+	}
+	return true;
+}
+
 
 // set restitution co-efficients: for all objects
 void Sai2Simulation::setCollisionRestitution(double restitution) {

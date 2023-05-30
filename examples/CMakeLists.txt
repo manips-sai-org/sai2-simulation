@@ -3,3 +3,4 @@
 # Subsequent authors: Shameek Ganguly
 
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/GLUT)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/sai2)

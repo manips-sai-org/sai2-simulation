@@ -16,8 +16,6 @@ ForceSensorSim::ForceSensorSim(
 
 	_remove_spike = false;
 	_first_iteration = true;
-
-
 }
 
 //dtor
@@ -53,25 +51,20 @@ void ForceSensorSim::update(const cDynamicWorld* dyn_world) {
 		_data->_moment += rel_pos.cross(force_list[pt_ind]);
 	}
 
-	Eigen::VectorXd force_raw = _data->_force;
-	Eigen::VectorXd moment_raw = _data->_moment;
-
 	if (_first_iteration)
 	{
-		_previous_force = force_raw;
-		_previous_torque = moment_raw;
+		_previous_force = _data->_force;
+		_previous_torque = _data->_moment;
 		_first_iteration=false;
 	}
 
 	// Discretly remove spikes if required
 	if (_remove_spike)
 	{
-		std::cout << "F_diff" << fabs(force_raw[0]-_previous_force[0]) << std::endl;
-
-		if(fabs(force_raw[0]-_previous_force[0]) >= _force_threshold)
+		if(fabs(_data->_force[0]-_previous_force[0]) >= _force_threshold)
 		{
-			force_raw = _previous_force;
-			moment_raw = _previous_torque;
+			_data->_force = _previous_force;
+			_data->_moment = _previous_torque;
 		}
 	}
 
@@ -80,41 +73,43 @@ void ForceSensorSim::update(const cDynamicWorld* dyn_world) {
 }
 
 // get force
-void ForceSensorSim::getForce(Eigen::Vector3d& ret_force) {
-	ret_force = _data->_force;
+Eigen::Vector3d ForceSensorSim::getForce() const {
+	return _data->_force;
 }
 
-void ForceSensorSim::getForceLocalFrame(Eigen::Vector3d& ret_force) {
+Eigen::Vector3d ForceSensorSim::getForceLocalFrame() const {
 	Eigen::Matrix3d R_base_sensor;
 	_model->rotationInWorld(R_base_sensor, _data->_link_name);
 	R_base_sensor = R_base_sensor * _data->_transform_in_link.rotation();
 
-	ret_force = R_base_sensor.transpose() * _data->_force;
+	return R_base_sensor.transpose() * _data->_force;
 }
 
 // get moment
-void ForceSensorSim::getMoment(Eigen::Vector3d& ret_moment) {
-	ret_moment = _data->_moment;
+Eigen::Vector3d ForceSensorSim::getMoment() const {
+	return _data->_moment;
 }
 
-void ForceSensorSim::getMomentLocalFrame(Eigen::Vector3d& ret_moment) {
+Eigen::Vector3d ForceSensorSim::getMomentLocalFrame() const {
 	Eigen::Matrix3d R_base_sensor;
 	_model->rotationInWorld(R_base_sensor, _data->_link_name);
 	R_base_sensor = R_base_sensor * _data->_transform_in_link.rotation();
 
-	ret_moment = R_base_sensor.transpose() * _data->_moment;
+	return R_base_sensor.transpose() * _data->_moment;
 }
 
 // get force and moment
-void ForceSensorSim::getForceMoment(Eigen::VectorXd& ret_force_moment) {
-	ret_force_moment.setZero(6);
+Eigen::VectorXd ForceSensorSim::getForceMoment() const {
+	Eigen::VectorXd ret_force_moment = Eigen::VectorXd::Zero(6);
 
 	ret_force_moment.head(3) = _data->_force;
 	ret_force_moment.tail(3) = _data->_moment;
+
+	return ret_force_moment;
 }
 
-void ForceSensorSim::getForceMomentLocalFrame(Eigen::VectorXd& ret_force_moment) {
-	ret_force_moment.setZero(6);
+Eigen::VectorXd ForceSensorSim::getForceMomentLocalFrame() const {
+	Eigen::VectorXd ret_force_moment = Eigen::VectorXd::Zero(6);
 
 	Eigen::Matrix3d R_base_sensor;
 	_model->rotationInWorld(R_base_sensor, _data->_link_name);
@@ -122,6 +117,8 @@ void ForceSensorSim::getForceMomentLocalFrame(Eigen::VectorXd& ret_force_moment)
 
 	ret_force_moment.head(3) = R_base_sensor.transpose() * _data->_force;
 	ret_force_moment.tail(3) = R_base_sensor.transpose() * _data->_moment;
+
+	return ret_force_moment;
 }
 
 void ForceSensorSim::enableSpikeRemoval(const double force_threshold)

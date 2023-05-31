@@ -59,23 +59,22 @@ public:
 	void update(const cDynamicWorld* dyn_world);
 
 	// get force applied to sensor body in world coordinates
-	void getForce(Eigen::Vector3d& ret_force);
+	Eigen::Vector3d getForce() const;
 
 	// get force applied to sensor body in local sensor frame
-	void getForceLocalFrame(Eigen::Vector3d& ret_force);
+	Eigen::Vector3d getForceLocalFrame() const;
 
 	// get moment applied to sensor body in world coordinates
-	void getMoment(Eigen::Vector3d& ret_moment);
+	Eigen::Vector3d getMoment() const;
 
 	// get moment applied to sensor body in local sensor frame
-	void getMomentLocalFrame(Eigen::Vector3d& ret_moment);
+	Eigen::Vector3d getMomentLocalFrame() const;
 
-	// Apply Butterworth filter to the force data
 	// get force and moment applied to sensor body in world frame as a 6dof vector (force first moment second)
-	void getForceMoment(Eigen::VectorXd& ret_force_moment);
+	Eigen::VectorXd getForceMoment() const;
 
 	// get force and moment applied to sensor body in local sensor frame as a 6dof vector (force first moment second)
-	void getForceMomentLocalFrame(Eigen::VectorXd& ret_force_moment);
+	Eigen::VectorXd getForceMomentLocalFrame() const;
 
 	// Discretly remove spikes from the force data
 	void enableSpikeRemoval(const double force_threshold);

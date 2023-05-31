@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+
+<world name="demo_world" gravity="0.0 0.0 -9.81">
+
+	<robot name="RRBot">
+		<!-- model node is required -->
+		<model dir="resources" path="rrbot.urdf" name="RRBot_description" />
+		<!-- origin node is optional -->
+		<origin xyz="0.0 0.0 2.0" rpy="0 0 0" />
+		<visual showwireframe="off" showframes="on" />
+	</robot>
+
+	<light name="light1" type="directional">
+		<position xyz="2.0 -2.0 2.0" />
+		<lookat xyz="0.0 0.0 0.5" />
+	</light>
+
+	<light name="light2" type="directional">
+		<position xyz="2.0 2.0 2.0" />
+		<lookat xyz="0.0 0.0 0.5" />
+	</light>
+
+	<camera name="camera_fixed">
+		<position xyz="3.52053 0   2.76026" />
+		<lookat xyz="2.6261   0   2.31305" />
+		<vertical xyz="-0.447214  0  0.894427" />
+	</camera>
+
+	<!-- TODO: support stereo specification -->
+
+</world>

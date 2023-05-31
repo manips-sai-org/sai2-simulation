@@ -404,6 +404,36 @@ void Sai2Simulation::addSimulatedForceSensor(
         }
 }
 
+Eigen::Vector3d Sai2Simulation::getSensedForce(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame) {
+	if (!forceSensorExists(robot_name, link_name)) {
+			std::cout
+				<< "WARNING: no force sensor registered on robot ["
+				<< robot_name << "] and link [" << link_name
+				<< "]. Returnong Zero forces" << std::endl;
+			return Eigen::Vector3d::Zero();
+	}
+
+	if(in_sensor_frame) {
+		return _force_sensors[robot_name][link_name]->getForceLocalFrame();
+	}
+	return _force_sensors[robot_name][link_name]->getForce();
+}
+
+Eigen::Vector3d Sai2Simulation::getSensedMoment(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame) {
+	if (!forceSensorExists(robot_name, link_name)) {
+			std::cout
+				<< "WARNING: no force sensor registered on robot ["
+				<< robot_name << "] and link [" << link_name
+				<< "]. Returnong Zero moments" << std::endl;
+			return Eigen::Vector3d::Zero();
+	}
+
+	if(in_sensor_frame) {
+		return _force_sensors[robot_name][link_name]->getMomentLocalFrame();
+	}
+	return _force_sensors[robot_name][link_name]->getMoment();
+}
+
 bool Sai2Simulation::forceSensorExists(const std::string& robot_name, const std::string& link_name) const {
 	if (!robotAndLinkExists(robot_name, link_name)) {
 		std::cout << 

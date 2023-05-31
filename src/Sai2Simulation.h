@@ -30,7 +30,7 @@ public:
      * @param path_to_world_file A path to the file containing the model of the virtual world (urdf and yml files supported).
      * @param verbose To display information about the robot model creation in the terminal or not.
      */
-	Sai2Simulation(const std::string& path_to_world_file, bool verbose);
+	Sai2Simulation(const std::string& path_to_world_file, bool verbose = false);
 
 	// \brief Destructor to clean up internal Sai2-Simulation model
 	~Sai2Simulation();
@@ -186,6 +186,9 @@ public:
      void addSimulatedForceSensor(
          const std::string& robot_name, const std::string& link_name,
          const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity());
+
+     Eigen::Vector3d getSensedForce(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame = true);
+     Eigen::Vector3d getSensedMoment(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame = true);
 
      /* Sai2-Simulation specific interface */
 

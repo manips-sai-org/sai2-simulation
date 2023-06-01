@@ -1,0 +1,133 @@
+<?xml version="1.0" ?>
+<!--simple pbot-->
+
+<robot name="RRRBot_description">
+    <link name="base_link">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <mass value="0.1" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.15" />
+            </geometry>
+            <material name="material_red">
+                <color rgba="0.6 0.0 0.0 1.0" />
+            </material>
+        </visual>
+    </link>
+    <link name="link0">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <mass value="0.1" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+    </link>
+    <link name="link1">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <mass value="0.1" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+    </link>
+    <link name="link2">
+        <inertial>
+            <origin xyz="0.0 0.0 -1.0" rpy="0 0 0" />
+            <mass value="1.0" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0.0 0.0 -1.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.1" />
+            </geometry>
+            <material name="material_blue">
+                <color rgba="0.0 0.0 0.6 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.0 0.0 -1.0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="0.05" length="1.0"/>
+            </geometry>
+        </visual>
+    </link>
+    <link name="link3">
+        <inertial>
+            <origin xyz="0.0 0.0 0.5" rpy="0 0 0" />
+            <mass value="1.0" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0.0 0.0 0.5" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.1" />
+            </geometry>
+            <material name="material_blue">
+                <color rgba="0.0 0.0 0.6 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="0.05" length="0.5"/>
+            </geometry>
+        </visual>
+    </link>
+    <link name="link4">
+        <inertial>
+            <origin xyz="0.0 0.0 0.5" rpy="0 0 0" />
+            <mass value="1.0" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0.0 0.0 0.5" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.1" />
+            </geometry>
+            <material name="material_blue">
+                <color rgba="0.0 0.0 0.6 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="0.05" length="0.5"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="j0" type="revolute">
+        <parent link="base_link" />
+        <child link="link0" />
+        <origin xyz="0.000000 0.000000 0.000000" rpy="-0.000000 0.000000 -0.000000" />
+        <axis xyz="1 0 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+    <joint name="j1" type="revolute">
+        <parent link="link0" />
+        <child link="link1" />
+        <origin xyz="0.000000 0.000000 0.000000" rpy="-0.000000 0.000000 -0.000000" />
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+    <joint name="j2" type="revolute">
+        <parent link="link1" />
+        <child link="link2" />
+        <origin xyz="0.000000 0.000000 0.000000" rpy="-0.000000 0.000000 -0.000000" />
+        <axis xyz="0 0 1" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+    <joint name="j3" type="fixed">
+        <parent link="link2" />
+        <child link="link3" />
+        <origin xyz="0.000000 0.000000 -1.000000" rpy="-1.570796 0.000000 -0.000000" />
+    </joint>
+    <joint name="j4" type="fixed">
+        <parent link="link3" />
+        <child link="link4" />
+        <origin xyz="0.000000 0.000000 0.500000" rpy="0.000000 1.570796 -0.000000" />
+    </joint>
+</robot>

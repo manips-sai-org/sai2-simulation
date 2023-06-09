@@ -331,8 +331,9 @@ void Sai2Simulation::integrate(double timestep) {
 	// update dynamic world
 	_world->updateDynamics(timestep);
 	// update robot models
-	for(auto robot_name_model : _robot_models) {
-		Eigen::VectorXd q_robot = Eigen::VectorXd::Zero(robot_name_model.second->dof());
+	for (auto robot_name_model : _robot_models) {
+		Eigen::VectorXd q_robot =
+			Eigen::VectorXd::Zero(robot_name_model.second->q_size());
 		getJointPositions(robot_name_model.first, q_robot);
 		robot_name_model.second->set_q(q_robot);
 		robot_name_model.second->updateKinematics();

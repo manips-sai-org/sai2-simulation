@@ -11,4 +11,5 @@ set (SAI2_EXAMPLES_LIBRARIES
 add_subdirectory(01-load_world_and_simulate)
 add_subdirectory(02-fixed_joint)
 add_subdirectory(03-spherical_joint)
+add_subdirectory(04-joint_limits_and_damping)
 add_subdirectory(05-force_sensor)

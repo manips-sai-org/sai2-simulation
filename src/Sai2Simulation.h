@@ -33,7 +33,7 @@ public:
 	Sai2Simulation(const std::string& path_to_world_file, bool verbose = false);
 
 	// \brief Destructor to clean up internal Sai2-Simulation model
-	~Sai2Simulation();
+	~Sai2Simulation() = default;
 
 	/**
      * @brief Get degrees of freedom of a particular robot. 
@@ -43,6 +43,7 @@ public:
 	unsigned int dof(const std::string& robot_name) const;
 	unsigned int q_size(const std::string& robot_name) const;
 
+     void resetWorld(const std::string& path_to_world_file, bool verbose = false);
 
 	/**
      * @brief Set joint positions as an array. Assumes serial or tree chain robot.
@@ -314,7 +315,7 @@ public:
       */
      Eigen::Affine3d getRobotBaseTransform(const std::string& robot_name) const;
 
-     const cDynamicWorld* getDynamicWorld() const {return _world;}
+     const std::shared_ptr<cDynamicWorld> getDynamicWorld() const {return _world;}
 
      std::vector<std::string> getRobotNames() const;
 
@@ -326,7 +327,7 @@ private:
 	/**
      * @brief Internal dynamics world object.
      */
-	cDynamicWorld* _world;
+	std::shared_ptr<cDynamicWorld> _world;
 
   std::map<std::string, std::string> _robot_filenames;
   std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;

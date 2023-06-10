@@ -23,7 +23,7 @@ ForceSensorSim::~ForceSensorSim() {
 }
 
 // update force information
-void ForceSensorSim::update(const cDynamicWorld* dyn_world) {
+void ForceSensorSim::update(const std::shared_ptr<cDynamicWorld> dyn_world) {
 	// NOTE that this assumes that the robot model is updated
 	// get the list of contact forces acting on the link
 	std::vector<Eigen::Vector3d> force_list;

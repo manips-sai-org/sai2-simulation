@@ -56,7 +56,7 @@ public:
 	~ForceSensorSim();
 
 	// update force information
-	void update(const cDynamicWorld* dyn_world);
+	void update(const std::shared_ptr<cDynamicWorld> dyn_world);
 
 	// get force applied to sensor body in world coordinates
 	Eigen::Vector3d getForce() const;

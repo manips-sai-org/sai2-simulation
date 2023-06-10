@@ -41,6 +41,7 @@ public:
      * @param robot_name Name of the robot for which transaction is required.
      */
 	unsigned int dof(const std::string& robot_name) const;
+	unsigned int q_size(const std::string& robot_name) const;
 
 
 	/**
@@ -137,14 +138,6 @@ public:
 	void setJointTorque(const std::string& robot_name,
 						unsigned int joint_id,
 						double tau);
-
-	/**
-     * @brief Read back joint torques as an array. NOTE: Currently unsupported due to lack of support in Sai2-Simulation.
-     * @param robot_name Name of the robot for which transaction is required.
-     * @param tau_ret Array to write back joint torques into.
-     */
-	void getJointTorques(const std::string& robot_name,
-							Eigen::VectorXd& tau_ret) const;
 
 	/**
      * @brief Read back joint accelerations as an array.
@@ -323,25 +316,17 @@ public:
 
      const cDynamicWorld* getDynamicWorld() const {return _world;}
 
-private:
-     bool robotAndLinkExists(const std::string& robot_name, const std::string link_name = "") const;
+     std::vector<std::string> getRobotNames() const;
 
-     bool forceSensorExists(const std::string& robot_name, const std::string& link_name) const;
+private:
+     bool existsInSimulatedWorld(const std::string& robot_or_object_name, const std::string link_name = "") const;
+
+     bool existsInSimulatedForceSensors(const std::string& robot_name, const std::string& link_name) const;
 
 	/**
      * @brief Internal dynamics world object.
      */
 	cDynamicWorld* _world;
-
-  /**
-     * @brief Internal map of robot name to dof.
-     */
-  std::map<std::string, uint> _dof_map;
-
-  /**
-     * @brief Internal map of robot name to q_size.
-     */
-  std::map<std::string, uint> _q_size_map;
 
   std::map<std::string, std::string> _robot_filenames;
   std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;

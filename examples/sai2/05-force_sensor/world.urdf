@@ -4,10 +4,9 @@
 
 	<robot name="PBot1">
 		<!-- model node is required -->
-		<model dir="resources" path="pbot1.urdf" name="PBot" />
+		<model dir="resources" path="pbot.urdf" name="PBot" />
 		<!-- origin node is optional -->
 		<origin xyz="0.0 1.0 0.0" rpy="0 0 0" />
-		<visual showwireframe="off" showframes="off" />
 	</robot>
 
 	<static_object name="Box">

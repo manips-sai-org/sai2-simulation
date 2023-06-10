@@ -243,3 +243,57 @@ cDynamicBase* cDynamicWorld::getBaseNode(std::string a_name)
     // no base node found, return NULL
     return (NULL);
 }
+
+//===========================================================================
+/*!
+    Get a list of contacts (location and force in world) for a given robot at a given list
+
+    \param  contact_points  Return vector of contact locations in world
+    \param  contact_forces  Return vector of contact forces in world
+    \param  robot_name  Name of the object
+    \param  link_name  Name of the link
+*/
+//===========================================================================
+void cDynamicWorld::getContactList(std::vector<Eigen::Vector3d>& contact_points,
+                                   std::vector<Eigen::Vector3d>& contact_forces,
+                                   const ::std::string& robot_name,
+                                   const std::string& link_name) const {
+	contact_points.clear();
+	contact_forces.clear();
+	Eigen::Vector3d current_position = Eigen::Vector3d::Zero();
+	Eigen::Vector3d current_force = Eigen::Vector3d::Zero();
+
+    for(auto i = m_dynamicObjects.begin(); i != m_dynamicObjects.end(); ++i)
+    {
+    	cDynamicBase* object = *i;
+    	// only consider the desired object
+    	if(object->m_name != robot_name)
+    	{
+    		continue;
+    	}
+    	int num_contacts = object->m_dynamicContacts->getNumContacts();
+    	// only consider if the oject is contacting something
+        if(num_contacts > 0)
+        {
+        	for(int k=0; k < num_contacts; k++)
+	    	{
+	        	cDynamicContact* contact = object->m_dynamicContacts->getContact(k);
+	        	// only consider contacts at the desired link
+                if(contact==NULL || contact->m_dynamicLink->m_name != link_name)
+	        	{
+	        		continue;
+	        	}
+	        	// copy chai3d vector to eigen vector
+	        	for(int l=0; l<3; l++)
+	        	{
+		        	current_position(l) = contact->m_globalPos(l);
+		        	// the friction force is inverted for some reason. Need to substract it to get a coherent result.
+		        	current_force(l) = contact->m_globalNormalForce(l) - contact->m_globalFrictionForce(l);
+	        	}
+	        	// reverse the sign to get the list of forces applied to the considered object
+	        	contact_points.push_back(current_position);
+	        	contact_forces.push_back(-current_force);
+	        }
+        }
+    }
+}

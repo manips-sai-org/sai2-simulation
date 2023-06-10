@@ -13,11 +13,15 @@
 #include <Eigen/Geometry>
 #include <vector>
 #include <map>
+#include <memory>
+
+#include <Sai2Model.h>
+#include "force_sensor_sim/ForceSensorSim.h"
 
 // forward define from sai2-simulation
 class cDynamicWorld;
 
-namespace Simulation {
+namespace Sai2Simulation {
 
 class Sai2Simulation {
 public:
@@ -26,7 +30,7 @@ public:
      * @param path_to_world_file A path to the file containing the model of the virtual world (urdf and yml files supported).
      * @param verbose To display information about the robot model creation in the terminal or not.
      */
-	Sai2Simulation(const std::string& path_to_world_file, bool verbose);
+	Sai2Simulation(const std::string& path_to_world_file, bool verbose = false);
 
 	// \brief Destructor to clean up internal Sai2-Simulation model
 	~Sai2Simulation();
@@ -55,20 +59,20 @@ public:
 	void getJointPositions(const std::string& robot_name,
 							Eigen::VectorXd& q_ret) const;
 
-  /**
-     * @brief Read back position and orientation of an object.
-     * @param object_name Name of the object for which transaction is required.
-     * @param pos Array to write back position into.
-     * @param ori Quaternion to write back orientation into.
-     */
-  void getObjectPosition(const std::string& object_name,
-              Eigen::Vector3d& pos,
-              Eigen::Quaterniond& ori) const;
+     /**
+          * @brief Read back position and orientation of an object.
+          * @param object_name Name of the object for which transaction is required.
+          * @param pos Array to write back position into.
+          * @param ori Quaternion to write back orientation into.
+          */
+     void getObjectPosition(const std::string& object_name,
+               Eigen::Vector3d& pos,
+               Eigen::Quaterniond& ori) const;
 
-  // set object pose
-  void setObjectPosition(const std::string& object_name,
-              const Eigen::Vector3d& pos,
-              const Eigen::Quaterniond& ori) const;
+     // set object pose
+     void setObjectPosition(const std::string& object_name,
+               const Eigen::Vector3d& pos,
+               const Eigen::Quaterniond& ori) const;
 
 	/**
      * @brief Set joint position for a single joint
@@ -106,15 +110,15 @@ public:
 	void getJointVelocities(const std::string& robot_name,
 							Eigen::VectorXd& dq_ret) const;
 
-  /**
-     * @brief Read back linear and angular velocities of an object.
-     * @param object_name Name of the object for which transaction is required.
-     * @param lin_vel Array to write back linear velocity into.
-     * @param ang_vel Array to write back angular velocity into.
-     */
-  void getObjectVelocity(const std::string& object_name,
-              Eigen::Vector3d& lin_vel,
-              Eigen::Vector3d& ang_vel) const;
+     /**
+          * @brief Read back linear and angular velocities of an object.
+          * @param object_name Name of the object for which transaction is required.
+          * @param lin_vel Array to write back linear velocity into.
+          * @param ang_vel Array to write back angular velocity into.
+          */
+     void getObjectVelocity(const std::string& object_name,
+               Eigen::Vector3d& lin_vel,
+               Eigen::Vector3d& ang_vel) const;
 
 	/**
      * @brief Set joint torques as an array. Assumes serial or tree chain robot.
@@ -178,6 +182,13 @@ public:
       */
      void getContactList(std::vector<Eigen::Vector3d>& contact_points, std::vector<Eigen::Vector3d>& contact_forces, 
      const::std::string& robot_name, const std::string& link_name);
+
+     void addSimulatedForceSensor(
+         const std::string& robot_name, const std::string& link_name,
+         const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity());
+
+     Eigen::Vector3d getSensedForce(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame = true);
+     Eigen::Vector3d getSensedMoment(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame = true);
 
      /* Sai2-Simulation specific interface */
 
@@ -310,7 +321,13 @@ public:
       */
      Eigen::Affine3d getRobotBaseTransform(const std::string& robot_name) const;
 
-public:
+     const cDynamicWorld* getDynamicWorld() const {return _world;}
+
+private:
+     bool robotAndLinkExists(const std::string& robot_name, const std::string link_name = "") const;
+
+     bool forceSensorExists(const std::string& robot_name, const std::string& link_name) const;
+
 	/**
      * @brief Internal dynamics world object.
      */
@@ -326,10 +343,13 @@ public:
      */
   std::map<std::string, uint> _q_size_map;
 
+  std::map<std::string, std::string> _robot_filenames;
+  std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+
+  std::map<std::string, std::map<std::string, std::shared_ptr<ForceSensorSim>>> _force_sensors;
+
   std::map<std::string , Eigen::Vector3d> _dyn_object_base_pos;
   std::map<std::string , Eigen::Quaterniond> _dyn_object_base_rot;
-
-
 };
 
 }

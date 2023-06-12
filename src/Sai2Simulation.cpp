@@ -21,35 +21,40 @@ namespace Sai2Simulation {
 
 // ctor
 Sai2Simulation::Sai2Simulation(const std::string& path_to_world_file,
-	            		bool verbose)
-{
-	// create a dynamics world
-	_world = new cDynamicWorld(NULL);
+							   bool verbose) {
+	resetWorld(path_to_world_file, verbose);
+}
 
-	URDFToDynamics3dWorld(path_to_world_file, _world, _dyn_object_base_pos, _dyn_object_base_rot, _robot_filenames, verbose);
+void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
+									 bool verbose) {
+	// clean up robot names, models and force sensors
+	_robot_filenames.clear();
+	_robot_models.clear();
+	for(auto pair : _force_sensors) {
+		pair.second.clear();
+	}
+	_force_sensors.clear();
+	
+	// create a dynamics world
+	_world = std::make_shared<cDynamicWorld>(nullptr);
+
+	URDFToDynamics3dWorld(path_to_world_file, _world, _dyn_object_base_pos,
+						  _dyn_object_base_rot, _robot_filenames, verbose);
 
 	// enable dynamics for all robots in this world
 	// TODO: consider pushing up to the API?
-	for (auto robot: _world->m_dynamicObjects) {
+	for (auto robot : _world->m_dynamicObjects) {
 		robot->enableDynamics(true);
 	}
 
 	// create robot models
-	for(const auto& pair : _robot_filenames) {
+	for (const auto& pair : _robot_filenames) {
 		const auto& robot_name = pair.first;
 		const auto& robot_file = pair.second;
-		_robot_models[robot_name] =
-			std::make_shared<Sai2Model::Sai2Model>(
-				robot_file, false, getRobotBaseTransform(robot_name),
-				_world->getGravity().eigen());
+		_robot_models[robot_name] = std::make_shared<Sai2Model::Sai2Model>(
+			robot_file, false, getRobotBaseTransform(robot_name),
+			_world->getGravity().eigen());
 	}
-}
-
-// dtor
-Sai2Simulation::~Sai2Simulation() {
-	//TODO: ensure deallocation within cDynamicWorld class
-	delete _world;
-	_world = NULL;
 }
 
 std::vector<std::string> Sai2Simulation::getRobotNames() const {

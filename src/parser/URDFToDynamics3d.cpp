@@ -157,7 +157,7 @@ static void loadLinkInertial(cDynamicLink* link, ConstLinkPtr& urdf_link) {
 }
 
 void URDFToDynamics3dWorld(const std::string& filename, 
-							cDynamicWorld* world, 
+							std::shared_ptr<cDynamicWorld> world, 
 							std::map<std::string , Eigen::Vector3d>& _dyn_object_base_pos,
 							std::map<std::string , Eigen::Quaterniond>& _dyn_object_base_rot, 
 							std::map<std::string, std::string>& robot_filenames,

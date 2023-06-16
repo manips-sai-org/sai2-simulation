@@ -2,7 +2,6 @@
 // with physics and contact in a Sai2Simulation virtual world. A graphics model of it is also shown using 
 // Chai3D.
 
-#include <Sai2Model.h>
 #include <Sai2Simulation.h>
 #include <Sai2Graphics.h>
 
@@ -12,10 +11,8 @@
 using namespace std;
 
 const string world_file = "resources/world.urdf";
-const string robot_file = "resources/pbot.urdf";
 const string robot_name = "PBot1";
 const string link_name = "sensor_link";
-const string camera_name = "camera_fixed";
 
 unsigned long long simulation_counter = 0;
 Eigen::VectorXd q_robot;
@@ -25,6 +22,7 @@ int main() {
 
 	// load simulation world
 	auto sim = new Sai2Simulation::Sai2Simulation(world_file);
+	sim->setTimestep(0.01);
 
 	// load graphics scene
 	auto graphics = new Sai2Graphics::Sai2Graphics(world_file);
@@ -44,8 +42,8 @@ int main() {
     // while window is open:
     while (graphics->isWindowOpen())
 	{
-		// update simulation by 1ms
-		sim->integrate(0.01);
+		// update simulation
+		sim->integrate();
 
 		// update kinematic models
 		sim->getJointPositions(robot_name, q_robot);
@@ -53,7 +51,7 @@ int main() {
 		// update graphics. this automatically waits for the correct amount of time
 		int width, height;
 		graphics->updateRobotGraphics(robot_name, q_robot);
-		graphics->updateDisplayedWorld(camera_name);
+		graphics->updateDisplayedWorld();
 
 		if(simulation_counter %300 == 0)
 		{

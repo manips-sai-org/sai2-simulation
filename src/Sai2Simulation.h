@@ -45,6 +45,15 @@ public:
 
      void resetWorld(const std::string& path_to_world_file, bool verbose = false);
 
+     double timestep() const {return _timestep;}
+     void setTimestep(const double dt);
+
+     double time() const {return _time;}
+
+     double isPaused() const {return _is_paused;}
+     void pause() {_is_paused = true;}
+     void unpause() {_is_paused = false;}
+
 	/**
      * @brief Set joint positions as an array. Assumes serial or tree chain robot.
      * @param robot_name Name of the robot for which transaction is required.
@@ -149,10 +158,10 @@ public:
 								Eigen::VectorXd& ddq_ret) const;
 
 	/**
-     * @brief Integrate the virtual world over given time step.
-     * @param timestep Time step in seconds by which to forward simulation.
-     */
-	void integrate(double timestep);
+	 * @brief Integrate the virtual world over the time step (1ms by default or
+	 * defined by calling the setTimestep function).
+	 */
+	void integrate();
 
      /**
       * @brief      Shows the contact information, whenever a contact occurs
@@ -331,6 +340,10 @@ private:
 
   std::map<std::string, std::string> _robot_filenames;
   std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+
+     bool _is_paused;
+     double _time;
+     double _timestep = 0.001;
 
   std::map<std::string, std::map<std::string, std::shared_ptr<ForceSensorSim>>> _force_sensors;
 

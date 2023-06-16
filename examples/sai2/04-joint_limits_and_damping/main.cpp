@@ -8,22 +8,21 @@
 using namespace std;
 
 const string world_fname = "resources/world.urdf";
-const string robot_name = "RRBot";
-const string camera_name = "camera_fixed";
 
 bool fSimulationRunning = false;
 
 // sim
-void simulation(Sai2Simulation::Sai2Simulation* sim);
+void simulation(shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
 int main (int argc, char** argv) {
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
-	auto sim = new Sai2Simulation::Sai2Simulation(world_fname, false);
+	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_fname, false);
+	const string robot_name = sim->getRobotNames()[0];
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_fname, "sai2-simulation example 01-fixed_joint", false);
+	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 01-fixed_joint", false);
 	graphics->addUIForceInteraction(robot_name);
 
 	// start the simulation
@@ -36,13 +35,13 @@ int main (int argc, char** argv) {
     	// apply joint torque
     	sim->setJointTorques(robot_name, torques);
 
-		// update kinematic models
+		// get joint positions from simulation
 		Eigen::VectorXd robot_q;
 		sim->getJointPositions(robot_name, robot_q);
 
 		// update graphics. this automatically waits for the correct amount of time
 		graphics->updateRobotGraphics(robot_name, robot_q);
-		graphics->updateDisplayedWorld(camera_name);
+		graphics->updateDisplayedWorld();
 		graphics->getUITorques(robot_name, torques);
 	}
 
@@ -55,13 +54,13 @@ int main (int argc, char** argv) {
 
 
 //------------------------------------------------------------------------------
-void simulation(Sai2Simulation::Sai2Simulation* sim) {
+void simulation(shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 	fSimulationRunning = true;
+	double timestep = sim->timestep();
 
-	bool fTimerDidSleep = true;
 	while (fSimulationRunning) {
-		usleep(1000);
+		usleep(timestep * 1e6);
 		// integrate forward
-		sim->integrate(0.001);
+		sim->integrate();
 	}
 }

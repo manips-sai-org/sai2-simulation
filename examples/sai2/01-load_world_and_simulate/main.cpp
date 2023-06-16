@@ -14,35 +14,29 @@ const string camera_name = "camera_fixed";
 bool fSimulationRunning = false;
 
 // sim
-void simulation(Sai2Simulation::Sai2Simulation* sim);
+void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
 int main (int argc, char** argv) {
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
-	auto sim = new Sai2Simulation::Sai2Simulation(world_fname, false);
+	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_fname, false);
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_fname, "sai2-simulation example 01-fixed_joint", false);
+	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 01-fixed_joint", false);
 	graphics->setBackgroundColor(0.2, 0.2, 0.2);
 
 	// start the simulation
 	thread sim_thread(simulation, sim);
 	
-	Eigen::VectorXd torques = Eigen::VectorXd::Zero(sim->dof(robot_name));
-
     // while window is open:
     while (graphics->isWindowOpen()) {
-    	// apply joint torque
-    	sim->setJointTorques(robot_name, torques);
-
-		// update kinematic models
+		// read joint position from simulation
 		Eigen::VectorXd robot_q;
 		sim->getJointPositions(robot_name, robot_q);
-
 		// update graphics. this automatically waits for the correct amount of time
 		graphics->updateRobotGraphics(robot_name, robot_q);
-		graphics->updateDisplayedWorld(camera_name);
+		graphics->updateDisplayedWorld();
 	}
 
 	// stop simulation
@@ -54,13 +48,14 @@ int main (int argc, char** argv) {
 
 
 //------------------------------------------------------------------------------
-void simulation(Sai2Simulation::Sai2Simulation* sim) {
+void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 	fSimulationRunning = true;
+	double timestep = sim->timestep();
 
-	bool fTimerDidSleep = true;
 	while (fSimulationRunning) {
-		usleep(1000);
+		// wait
+		usleep(timestep * 1e6);
 		// integrate forward
-		sim->integrate(0.001);
+		sim->integrate();
 	}
 }

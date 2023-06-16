@@ -9,9 +9,6 @@
 using namespace std;
 
 const string world_fname = "resources/world.urdf";
-const string robot_name_1 = "PBot_fixed";
-const string robot_name_2 = "PPBot";
-const string camera_name = "camera_fixed";
 
 bool fSimulationRunning = false;
 
@@ -25,7 +22,7 @@ int main (int argc, char** argv) {
 	auto sim = std::make_shared<Sai2Simulation::Sai2Simulation>(world_fname, false);
 
 	// load graphics scene
-	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 01-fixed_joint", false);
+	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 02-fixed_joint", false);
 	graphics->setBackgroundColor(0.3, 0.3, 0.3);
 
 	// start the simulation
@@ -33,17 +30,12 @@ int main (int argc, char** argv) {
 	
     // while window is open:
     while (graphics->isWindowOpen()) {
-
-		// update kinematic models
-		Eigen::VectorXd robot1_q;
-		Eigen::VectorXd robot2_q;
-		sim->getJointPositions(robot_name_1, robot1_q);
-		sim->getJointPositions(robot_name_2, robot2_q);
-
-		// update graphics from latest simulation config
-		graphics->updateRobotGraphics(robot_name_1, robot1_q);
-		graphics->updateRobotGraphics(robot_name_2, robot2_q);
-		graphics->updateDisplayedWorld(camera_name);
+		for(const auto& robot_name : sim->getRobotNames()){
+			Eigen::VectorXd robot_q;
+			sim->getJointPositions(robot_name, robot_q); // read the joint values from simulation
+			graphics->updateRobotGraphics(robot_name, robot_q); // update the graphics with those joint values
+		}
+		graphics->updateDisplayedWorld();
 	}
 
 	// stop simulation
@@ -57,11 +49,10 @@ int main (int argc, char** argv) {
 //------------------------------------------------------------------------------
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 	fSimulationRunning = true;
+	double timestep = sim->timestep();
 
-	bool fTimerDidSleep = true;
 	while (fSimulationRunning) {
-		usleep(1000);
-		// integrate forward
-		sim->integrate(0.001);
+		usleep(timestep * 1e6);
+		sim->integrate();
 	}
 }

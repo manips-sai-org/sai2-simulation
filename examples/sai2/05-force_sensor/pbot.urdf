@@ -57,7 +57,6 @@
         <parent link="link0" />
         <child link="sensor_link" />
         <origin xyz="0.000000 0.000000 -0.090000" rpy="0.000000 0.000000 -0.000000" />
-        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
 
 

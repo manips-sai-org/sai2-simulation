@@ -27,6 +27,9 @@ Sai2Simulation::Sai2Simulation(const std::string& path_to_world_file,
 
 void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 									 bool verbose) {
+	_is_paused = false;
+	_time = 0;
+	
 	// clean up robot names, models and force sensors
 	_robot_filenames.clear();
 	_robot_models.clear();
@@ -79,6 +82,14 @@ unsigned int Sai2Simulation::q_size(const std::string& robot_name) const {
 	}
 	return _robot_models.at(robot_name)->q_size();
 }
+
+void Sai2Simulation::setTimestep(const double dt) {
+	if(dt <= 0) {
+		throw std::invalid_argument("simulation timestep cannot be 0 or negative");
+	}
+	_timestep = dt;
+}
+
 
 // set joint positions
 void Sai2Simulation::setJointPositions(const std::string& robot_name,
@@ -332,9 +343,14 @@ void Sai2Simulation::getJointAccelerations(const std::string& robot_name,
 }
 
 // integrate ahead
-void Sai2Simulation::integrate(double timestep) {
+void Sai2Simulation::integrate() {
+	if(_is_paused) {
+		return;
+	}
+
 	// update dynamic world
-	_world->updateDynamics(timestep);
+	_world->updateDynamics(_timestep);
+	_time += _timestep;
 	// update robot models
 	for (auto robot_name_model : _robot_models) {
 		Eigen::VectorXd q_robot =

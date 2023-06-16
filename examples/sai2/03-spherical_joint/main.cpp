@@ -31,7 +31,8 @@ int main (int argc, char** argv) {
 	}
 
 	// load graphics scene
-	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 01-fixed_joint", false);
+	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 03-spherical_joint", false);
+	// enable ui force interaction on all robots
 	for(const auto& robot_name : robot_names) {
 		graphics->addUIForceInteraction(robot_name);
 	}
@@ -43,13 +44,15 @@ int main (int argc, char** argv) {
     while (graphics->isWindowOpen()) {
 
 		// update graphics from latest simulation config
-		for(auto& pair : robot_q) {
-			sim->getJointPositions(pair.first, pair.second);
-			graphics->updateRobotGraphics(pair.first, pair.second);
+		for(const auto& robot_name : robot_names) {
+			sim->getJointPositions(robot_name, robot_q[robot_name]);
+			graphics->updateRobotGraphics(robot_name, robot_q[robot_name]);
 		}
-		graphics->updateDisplayedWorld(camera_name);
-		for(auto& pair : ui_torques) {
-			graphics->getUITorques(pair.first, pair.second);
+		graphics->updateDisplayedWorld();
+
+		// get the torques applied by the user via the ui
+		for(const auto& robot_name : robot_names) {
+			graphics->getUITorques(robot_name, ui_torques[robot_name]);
 		}
 	}
 
@@ -64,16 +67,16 @@ int main (int argc, char** argv) {
 //------------------------------------------------------------------------------
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 	fSimulationRunning = true;
+	double timestep = sim->timestep();
 
 	bool fTimerDidSleep = true;
 	while (fSimulationRunning) {
 		usleep(1000);
-
+		// apply ui torques to the simulation
 		for(const auto& pair : ui_torques) {
 			sim->setJointTorques(pair.first, pair.second);
 		}
-
 		// integrate forward
-		sim->integrate(0.001);
+		sim->integrate();
 	}
 }

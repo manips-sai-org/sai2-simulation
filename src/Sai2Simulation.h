@@ -190,8 +190,14 @@ public:
          const std::string& robot_name, const std::string& link_name,
          const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity());
 
-     Eigen::Vector3d getSensedForce(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame = true);
-     Eigen::Vector3d getSensedMoment(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame = true);
+	 Eigen::Vector3d getSensedForce(const std::string& robot_name,
+									const std::string& link_name,
+									const bool in_sensor_frame = true) const;
+	 Eigen::Vector3d getSensedMoment(const std::string& robot_name,
+									 const std::string& link_name,
+									 const bool in_sensor_frame = true) const;
+
+	 std::vector<Sai2Model::ForceSensorData> getAllForceSensorData() const;
 
      /* Sai2-Simulation specific interface */
 
@@ -329,26 +335,28 @@ public:
      std::vector<std::string> getRobotNames() const;
 
 private:
-     bool existsInSimulatedWorld(const std::string& robot_or_object_name, const std::string link_name = "") const;
+     bool existsInSimulatedWorld(const std::string& robot_or_object_name,
+                                        const std::string link_name = "") const;
 
-     bool existsInSimulatedForceSensors(const std::string& robot_name, const std::string& link_name) const;
+     int findSimulatedForceSensor(const std::string& robot_name,
+									const std::string& link_name) const;
 
-	/**
-     * @brief Internal dynamics world object.
-     */
-	std::shared_ptr<cDynamicWorld> _world;
+     /**
+      * @brief Internal dynamics world object.
+      */
+     std::shared_ptr<cDynamicWorld> _world;
 
-  std::map<std::string, std::string> _robot_filenames;
-  std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+     std::map<std::string, std::string> _robot_filenames;
+     std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
 
      bool _is_paused;
      double _time;
      double _timestep = 0.001;
 
-  std::map<std::string, std::map<std::string, std::shared_ptr<ForceSensorSim>>> _force_sensors;
+     std::vector<std::shared_ptr<ForceSensorSim>> _force_sensors;
 
-  std::map<std::string , Eigen::Vector3d> _dyn_object_base_pos;
-  std::map<std::string , Eigen::Quaterniond> _dyn_object_base_rot;
+     std::map<std::string, Eigen::Vector3d> _dyn_object_base_pos;
+     std::map<std::string, Eigen::Quaterniond> _dyn_object_base_rot;
 };
 
 }

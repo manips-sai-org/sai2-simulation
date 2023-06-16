@@ -12,31 +12,6 @@
 
 namespace Sai2Simulation {
 
-// Basic data structure for force sensor data
-struct ForceSensorData {
-public:
-	// TODO: should probably add some sensor identity as well
-	std::string _robot_name; // name of robot to which sensor is attached
-	std::string _link_name; // name of link to which sensor is attached
-	// transform from link to sensor frame. Measured moments are with respect to
-	// the sensor frame origin
-	Eigen::Affine3d _transform_in_link;
-	Eigen::Vector3d _force; // in sensor frame
-	Eigen::Vector3d _moment; // in sensor frame
-
-public:
-	// ctor: assign defaults
-	ForceSensorData()
-	: _robot_name(""),
-	_link_name(""),
-	_transform_in_link(Eigen::Affine3d::Identity()),
-	_force(Eigen::Vector3d::Zero()),
-	_moment(Eigen::Vector3d::Zero())
-	{
-		// nothing to do
-	}
-};
-
 // Simulated force sensor type.
 // Note that this implementation ignores the mass and inertia of the object
 // attached beyond the force sensor.
@@ -79,12 +54,12 @@ public:
 	// Discretly remove spikes from the force data
 	void enableSpikeRemoval(const double force_threshold);
 
-public:
+private:
 	// handle to model interface
 	std::shared_ptr<Sai2Model::Sai2Model> _model;
 
 	// last updated data
-	std::shared_ptr<ForceSensorData> _data;
+	Sai2Model::ForceSensorData _data;
 
 	//spike removal
 	bool _remove_spike;

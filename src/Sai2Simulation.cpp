@@ -33,9 +33,6 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	// clean up robot names, models and force sensors
 	_robot_filenames.clear();
 	_robot_models.clear();
-	for(auto pair : _force_sensors) {
-		pair.second.clear();
-	}
 	_force_sensors.clear();
 	
 	// create a dynamics world
@@ -360,11 +357,8 @@ void Sai2Simulation::integrate() {
 		robot_name_model.second->updateKinematics();
 	}
 	// update force sensors if any
-	for(auto robot_name_sensors : _force_sensors) {
-		std::map<std::string, std::shared_ptr<ForceSensorSim>> robot_sensors = robot_name_sensors.second;
-		for(auto link_name_sensor : robot_sensors) {
-			link_name_sensor.second->update(getDynamicWorld());
-		}
+	for(auto sensor : _force_sensors) {
+		sensor->update(getDynamicWorld());
 	}
 }
 
@@ -432,89 +426,79 @@ void Sai2Simulation::getContactList(std::vector<Eigen::Vector3d>& contact_points
 }
 
 void Sai2Simulation::addSimulatedForceSensor(
-    const std::string& robot_name, const std::string& link_name,
-    const Eigen::Affine3d transform_in_link) {
+	const std::string& robot_name, const std::string& link_name,
+	const Eigen::Affine3d transform_in_link) {
 	if (!existsInSimulatedWorld(robot_name, link_name)) {
-		std::cout <<
-			"\n\nWARNING: trying to add a force sensor to an unexisting robot or link in "
-			"Sai2Simulation::addSimulatedForceSensor\n" << std::endl;
+		std::cout << "\n\nWARNING: trying to add a force sensor to an "
+					 "unexisting robot or link in "
+					 "Sai2Simulation::addSimulatedForceSensor\n"
+				  << std::endl;
 		return;
 	}
-
-	auto it_robot_name = _force_sensors.find(robot_name);
-	if(it_robot_name == _force_sensors.end()) {
-		std::map<std::string, std::shared_ptr<ForceSensorSim>> sensors;
-		sensors[link_name] = std::make_shared<ForceSensorSim>(robot_name, link_name, transform_in_link, _robot_models[robot_name]);
-		_force_sensors[robot_name] = sensors;
-	} else {
-		auto it_link_name = it_robot_name->second.find(link_name);
-			if (it_link_name != it_robot_name->second.end()) {
-			std::cout
-				<< "\n\nWARNING: only one force sensor is supported per "
-					"link in Sai2Simulation::addSimulatedForceSensor. Not "
-					"adding the second one\n"
-				<< std::endl;
-			return;
-			}
-			it_robot_name->second[link_name] =
-				std::make_shared<ForceSensorSim>(
-					robot_name, link_name, transform_in_link,
-					_robot_models[robot_name]);
-        }
+	if (findSimulatedForceSensor(robot_name, link_name) != -1) {
+		std::cout << "\n\nWARNING: only one force sensor is supported per "
+					 "link in Sai2Simulation::addSimulatedForceSensor. Not "
+					 "adding the second one\n"
+				  << std::endl;
+		return;
+	}
+	_force_sensors.push_back(std::make_shared<ForceSensorSim>(
+		robot_name, link_name, transform_in_link, _robot_models[robot_name]));
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedForce(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame) {
-	if (!existsInSimulatedForceSensors(robot_name, link_name)) {
+Eigen::Vector3d Sai2Simulation::getSensedForce(
+	const std::string& robot_name, const std::string& link_name,
+	const bool in_sensor_frame) const {
+	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
+	if (sensor_index == -1) {
 			std::cout
 				<< "WARNING: no force sensor registered on robot ["
 				<< robot_name << "] and link [" << link_name
 				<< "]. Returnong Zero forces" << std::endl;
 			return Eigen::Vector3d::Zero();
 	}
-
 	if(in_sensor_frame) {
-		return _force_sensors[robot_name][link_name]->getForceLocalFrame();
+		return _force_sensors.at(sensor_index)->getForceLocalFrame();
 	}
-	return _force_sensors[robot_name][link_name]->getForce();
+	return _force_sensors.at(sensor_index)->getForceWorldFrame();
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedMoment(const std::string& robot_name, const std::string& link_name, const bool in_sensor_frame) {
-	if (!existsInSimulatedForceSensors(robot_name, link_name)) {
+Eigen::Vector3d Sai2Simulation::getSensedMoment(
+	const std::string& robot_name, const std::string& link_name,
+	const bool in_sensor_frame) const {
+	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
+	if (sensor_index == -1) {
 			std::cout
 				<< "WARNING: no force sensor registered on robot ["
 				<< robot_name << "] and link [" << link_name
-				<< "]. Returnong Zero moments" << std::endl;
+				<< "]. Returnong Zero forces" << std::endl;
 			return Eigen::Vector3d::Zero();
 	}
-
 	if(in_sensor_frame) {
-		return _force_sensors[robot_name][link_name]->getMomentLocalFrame();
+		return _force_sensors.at(sensor_index)->getMomentLocalFrame();
 	}
-	return _force_sensors[robot_name][link_name]->getMoment();
+	return _force_sensors.at(sensor_index)->getMomentWorldFrame();
 }
 
-bool Sai2Simulation::existsInSimulatedForceSensors(const std::string& robot_name, const std::string& link_name) const {
-	if (!existsInSimulatedWorld(robot_name, link_name)) {
-		std::cout << 
-			"robot or link that doesn't exists in "
-			"Sai2Simulation::findForceSensor" << std::endl;
-			return false;
+std::vector<Sai2Model::ForceSensorData> Sai2Simulation::getAllForceSensorData()
+	const {
+	std::vector<Sai2Model::ForceSensorData> sensor_data;
+	for (const auto& sensor : _force_sensors) {
+		sensor_data.push_back(sensor->getData());
 	}
-	auto it_robot_name = _force_sensors.find(robot_name);
-	if(it_robot_name == _force_sensors.end()) {
-		std::cout << "no force sensors were added on the robot [" << robot_name << "] in the simulation" << std::endl;
-		return false;
-	}
-	auto it_link_name = it_robot_name->second.find(link_name);
-	if (it_link_name == it_robot_name->second.end()) {
-		std::cout << "no force sensors were added on the link ["
-					<< link_name << "] for the robot [" << robot_name
-					<< "] in the simulation" << std::endl;
-		return false;
-	}
-	return true; 
+	return sensor_data;
 }
 
+int Sai2Simulation::findSimulatedForceSensor(
+	const std::string& robot_name, const std::string& link_name) const {
+	for (int i = 0; i < _force_sensors.size(); ++i) {
+		if ((_force_sensors.at(i)->getData()._robot_name == robot_name) &&
+			(_force_sensors.at(i)->getData()._link_name == link_name)) {
+			return i;
+		}
+	}
+	return -1;
+}
 
 bool Sai2Simulation::existsInSimulatedWorld(const std::string& robot_name, const std::string link_name) const {
 	auto robot = _world->getBaseNode(robot_name);

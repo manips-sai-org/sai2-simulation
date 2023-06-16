@@ -34,29 +34,26 @@ public:
 	void update(const std::shared_ptr<cDynamicWorld> dyn_world);
 
 	// get force applied to sensor body in world coordinates
-	Eigen::Vector3d getForce() const;
+	Eigen::Vector3d getForceWorldFrame() const {return _data._force_world_frame;};
 
 	// get force applied to sensor body in local sensor frame
-	Eigen::Vector3d getForceLocalFrame() const;
+	Eigen::Vector3d getForceLocalFrame() const {return _data._force_local_frame;};
 
 	// get moment applied to sensor body in world coordinates
-	Eigen::Vector3d getMoment() const;
+	Eigen::Vector3d getMomentWorldFrame() const {return _data._moment_world_frame;};
 
 	// get moment applied to sensor body in local sensor frame
-	Eigen::Vector3d getMomentLocalFrame() const;
+	Eigen::Vector3d getMomentLocalFrame() const {return _data._moment_local_frame;};
 
-	// get force and moment applied to sensor body in world frame as a 6dof vector (force first moment second)
-	Eigen::VectorXd getForceMoment() const;
-
-	// get force and moment applied to sensor body in local sensor frame as a 6dof vector (force first moment second)
-	Eigen::VectorXd getForceMomentLocalFrame() const;
+	// get full data
+	Sai2Model::ForceSensorData getData() const {return _data;}
 
 	// Discretly remove spikes from the force data
 	void enableSpikeRemoval(const double force_threshold);
 
 private:
 	// handle to model interface
-	std::shared_ptr<Sai2Model::Sai2Model> _model;
+	std::shared_ptr<Sai2Model::Sai2Model> _robot;
 
 	// last updated data
 	Sai2Model::ForceSensorData _data;
@@ -65,8 +62,8 @@ private:
 	bool _remove_spike;
 	bool _first_iteration;
 	double _force_threshold;
-	Eigen::Vector3d _previous_force;
-	Eigen::Vector3d _previous_torque;
+	Eigen::Vector3d _previous_force_world_frame;
+	Eigen::Vector3d _previous_moment_world_frame;
 
 };
 

@@ -12,4 +12,4 @@ target_link_libraries (${EXAMPLE_NAME} ${SAI2_EXAMPLES_LIBRARIES})
 # NOTE: this requires an install build
 set(RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
 file(MAKE_DIRECTORY ${RESOURCE_DIR})
-FILE(COPY world.urdf pbot.urdf DESTINATION ${RESOURCE_DIR})
+FILE(COPY world.urdf pppbot.urdf DESTINATION ${RESOURCE_DIR})

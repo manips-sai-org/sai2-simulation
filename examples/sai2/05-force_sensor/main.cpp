@@ -11,7 +11,7 @@
 using namespace std;
 
 const string world_file = "resources/world.urdf";
-const string robot_name = "PBot1";
+const string robot_name = "PPPBot";
 const string link_name = "sensor_link";
 
 unsigned long long simulation_counter = 0;
@@ -29,9 +29,14 @@ int main() {
 
 	// add simulated force sensor
 	Eigen::Affine3d T_link_sensor = Eigen::Affine3d::Identity();
-	T_link_sensor.translate(Eigen::Vector3d(0.0, 0.05, 0.0));
+	T_link_sensor.translate(Eigen::Vector3d(0.0, 0.0, 0.0));
 	T_link_sensor.rotate(Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
 	sim->addSimulatedForceSensor(robot_name, link_name, T_link_sensor);
+
+	// add sensor display in the graphics
+	for(auto sensor_data : sim->getAllForceSensorData()) {
+		graphics->addForceSensorDisplay(sensor_data);
+	}
 
 	// offset a joint initial condition
 	sim->getJointPositions(robot_name, q_robot);
@@ -49,11 +54,17 @@ int main() {
 		sim->getJointPositions(robot_name, q_robot);
 
 		// update graphics. this automatically waits for the correct amount of time
-		int width, height;
 		graphics->updateRobotGraphics(robot_name, q_robot);
+		for(const auto sensor_data : sim->getAllForceSensorData()) {
+			graphics->updateDisplayedForceSensor(sensor_data);
+		}
 		graphics->updateDisplayedWorld();
 
-		if(simulation_counter %300 == 0)
+		if(simulation_counter == 150) {
+			sim->setJointTorque(robot_name, 1, -70);
+		}
+
+		if(simulation_counter %100 == 0)
 		{
 			std::cout << "force local frame:\t" << sim->getSensedForce(robot_name, link_name).transpose() << std::endl;
 			std::cout << "force world frame:\t" << sim->getSensedForce(robot_name, link_name, false).transpose() << std::endl;

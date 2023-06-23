@@ -1,5 +1,5 @@
 # name of the example
-set(EXAMPLE_NAME 05-force_sensor)
+set(EXAMPLE_NAME 07-contact_info)
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_BIN_DIR}/sai2/${EXAMPLE_NAME})
 
 # create an executable

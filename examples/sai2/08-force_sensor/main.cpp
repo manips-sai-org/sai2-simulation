@@ -1,9 +1,9 @@
 // This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Sai2Simulation virtual world. A graphics model of it is also shown using 
-// Chai3D.
+// with physics and contact in a Sai2Simulation virtual world. A graphics model
+// of it is also shown using Chai3D.
 
-#include <Sai2Simulation.h>
 #include <Sai2Graphics.h>
+#include <Sai2Simulation.h>
 
 #include <iostream>
 #include <string>
@@ -34,42 +34,51 @@ int main() {
 	sim->addSimulatedForceSensor(robot_name, link_name, T_link_sensor);
 
 	// add sensor display in the graphics
-	for(auto sensor_data : sim->getAllForceSensorData()) {
+	for (auto sensor_data : sim->getAllForceSensorData()) {
 		graphics->addForceSensorDisplay(sensor_data);
 	}
 
 	// offset a joint initial condition
 	sim->getJointPositions(robot_name, q_robot);
 	sim->setJointPosition(robot_name, 0, q_robot[0] + 0.5);
-	
+
 	sim->setCollisionRestitution(0);
 
-    // while window is open:
-    while (graphics->isWindowOpen())
-	{
+	// while window is open:
+	while (graphics->isWindowOpen()) {
 		// update simulation
 		sim->integrate();
 
 		// update kinematic models
 		sim->getJointPositions(robot_name, q_robot);
 
-		// update graphics. this automatically waits for the correct amount of time
+		// update graphics. this automatically waits for the correct amount of
+		// time
 		graphics->updateRobotGraphics(robot_name, q_robot);
-		for(const auto sensor_data : sim->getAllForceSensorData()) {
+		for (const auto sensor_data : sim->getAllForceSensorData()) {
 			graphics->updateDisplayedForceSensor(sensor_data);
 		}
 		graphics->updateDisplayedWorld();
 
-		if(simulation_counter == 150) {
+		if (simulation_counter == 150) {
 			sim->setJointTorque(robot_name, 1, -70);
 		}
 
-		if(simulation_counter %100 == 0)
-		{
-			std::cout << "force local frame:\t" << sim->getSensedForce(robot_name, link_name).transpose() << std::endl;
-			std::cout << "force world frame:\t" << sim->getSensedForce(robot_name, link_name, false).transpose() << std::endl;
-			std::cout << "moment local frame:\t" << sim->getSensedMoment(robot_name, link_name).transpose() << std::endl;
-			std::cout << "moment world frame:\t" << sim->getSensedMoment(robot_name, link_name, false).transpose() << std::endl;
+		if (simulation_counter % 100 == 0) {
+			std::cout << "force local frame:\t"
+					  << sim->getSensedForce(robot_name, link_name).transpose()
+					  << std::endl;
+			std::cout
+				<< "force world frame:\t"
+				<< sim->getSensedForce(robot_name, link_name, false).transpose()
+				<< std::endl;
+			std::cout << "moment local frame:\t"
+					  << sim->getSensedMoment(robot_name, link_name).transpose()
+					  << std::endl;
+			std::cout << "moment world frame:\t"
+					  << sim->getSensedMoment(robot_name, link_name, false)
+							 .transpose()
+					  << std::endl;
 			std::cout << std::endl;
 		}
 

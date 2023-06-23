@@ -1,9 +1,10 @@
 #include <iostream>
 #include <string>
 #include <thread>
-#include "unistd.h"
-#include "Sai2Simulation.h"
+
 #include "Sai2Graphics.h"
+#include "Sai2Simulation.h"
+#include "unistd.h"
 
 using namespace std;
 
@@ -16,25 +17,32 @@ bool fSimulationRunning = false;
 // sim
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
-int main (int argc, char** argv) {
+int main(int argc, char** argv) {
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
-	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_fname, false);
+	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_fname);
 
 	// load graphics scene
-	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 01-fixed_joint", false);
+	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_fname);
 	graphics->setBackgroundColor(0.2, 0.2, 0.2);
+
+	cout << endl
+		 << "This example loads a double pendulum and simulates gravity. The "
+			"graphics display is updated by the simulated robot joint angles"
+		 << endl
+		 << endl;
 
 	// start the simulation
 	thread sim_thread(simulation, sim);
-	
-    // while window is open:
-    while (graphics->isWindowOpen()) {
+
+	// while window is open:
+	while (graphics->isWindowOpen()) {
 		// read joint position from simulation
 		Eigen::VectorXd robot_q;
 		sim->getJointPositions(robot_name, robot_q);
-		// update graphics. this automatically waits for the correct amount of time
+		// update graphics. this automatically waits for the correct amount of
+		// time
 		graphics->updateRobotGraphics(robot_name, robot_q);
 		graphics->updateDisplayedWorld();
 	}
@@ -45,7 +53,6 @@ int main (int argc, char** argv) {
 
 	return 0;
 }
-
 
 //------------------------------------------------------------------------------
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {

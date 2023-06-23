@@ -1,9 +1,10 @@
 #include <iostream>
 #include <string>
 #include <thread>
-#include "unistd.h"
-#include "Sai2Simulation.h"
+
 #include "Sai2Graphics.h"
+#include "Sai2Simulation.h"
+#include "unistd.h"
 
 using namespace std;
 
@@ -14,7 +15,7 @@ bool fSimulationRunning = false;
 // sim
 void simulation(shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
-int main (int argc, char** argv) {
+int main(int argc, char** argv) {
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
@@ -22,24 +23,36 @@ int main (int argc, char** argv) {
 	const string robot_name = sim->getRobotNames()[0];
 
 	// load graphics scene
-	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_fname, "sai2-simulation example 01-fixed_joint", false);
+	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(
+		world_fname, "sai2-simulation example 01-fixed_joint", false);
 	graphics->addUIForceInteraction(robot_name);
+
+	cout << endl
+		 << "This example simulates a double pendulum robot with joint limits. "
+			"The robot will stop in its fall because of the limits, It is "
+			"possible to interact with the robot using right click to bring "
+			"it up to its upper limit as well. In addition. damping on "
+			"the joints is enabled by setting the <dynamics damping=\" ... "
+			"\"/> in the robot urdf file for the joints"
+		 << endl
+		 << endl;
 
 	// start the simulation
 	thread sim_thread(simulation, sim);
-	
+
 	Eigen::VectorXd torques = Eigen::VectorXd::Zero(sim->dof(robot_name));
 
-    // while window is open:
-    while (graphics->isWindowOpen()) {
-    	// apply joint torque
-    	sim->setJointTorques(robot_name, torques);
+	// while window is open:
+	while (graphics->isWindowOpen()) {
+		// apply joint torque
+		sim->setJointTorques(robot_name, torques);
 
 		// get joint positions from simulation
 		Eigen::VectorXd robot_q;
 		sim->getJointPositions(robot_name, robot_q);
 
-		// update graphics. this automatically waits for the correct amount of time
+		// update graphics. this automatically waits for the correct amount of
+		// time
 		graphics->updateRobotGraphics(robot_name, robot_q);
 		graphics->updateDisplayedWorld();
 		graphics->getUITorques(robot_name, torques);
@@ -51,7 +64,6 @@ int main (int argc, char** argv) {
 
 	return 0;
 }
-
 
 //------------------------------------------------------------------------------
 void simulation(shared_ptr<Sai2Simulation::Sai2Simulation> sim) {

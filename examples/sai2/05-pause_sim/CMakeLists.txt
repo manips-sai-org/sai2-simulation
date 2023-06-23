@@ -1,5 +1,5 @@
 # name of the example
-set(EXAMPLE_NAME 03-spherical_joint)
+set(EXAMPLE_NAME 05-pause_sim)
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_BIN_DIR}/sai2/${EXAMPLE_NAME})
 
 # create an executable
@@ -9,7 +9,6 @@ add_executable (${EXAMPLE_NAME} main.cpp)
 target_link_libraries (${EXAMPLE_NAME} ${SAI2_EXAMPLES_LIBRARIES})
 
 # export resources such as model files.
-# NOTE: this requires an install build
 set(RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
 file(MAKE_DIRECTORY ${RESOURCE_DIR})
-FILE(COPY world.urdf spherical_bot.urdf rrrbot.urdf DESTINATION ${RESOURCE_DIR})
+FILE(COPY world.urdf rbot.urdf DESTINATION ${RESOURCE_DIR})

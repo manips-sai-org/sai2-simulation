@@ -60,6 +60,13 @@ public:
 	void pause() { _is_paused = true; }
 	void unpause() { _is_paused = false; }
 
+	void enableGravityCompensation(const bool enable) {
+		_gravity_compensation_enabled = enable;
+	}
+	bool isGravityCompensationEnabled() const {
+		return _gravity_compensation_enabled;
+	}
+
 	/**
 	 * @brief Set joint positions as an array. Assumes serial or tree chain
 	 * robot.
@@ -362,6 +369,8 @@ private:
 	int findSimulatedForceSensor(const std::string& robot_name,
 								 const std::string& link_name) const;
 
+	void setAllJointTorquesInternal();
+
 	/**
 	 * @brief Internal dynamics world object.
 	 */
@@ -369,10 +378,13 @@ private:
 
 	std::map<std::string, std::string> _robot_filenames;
 	std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+	std::map<std::string, Eigen::VectorXd> _applied_robot_torques;
 
 	bool _is_paused;
 	double _time;
 	double _timestep = 0.001;
+
+	bool _gravity_compensation_enabled;
 
 	std::vector<std::shared_ptr<ForceSensorSim>> _force_sensors;
 

@@ -29,12 +29,17 @@ int main(int argc, char** argv) {
 
 	cout << endl
 		 << "This example loads a double pendulum and simulates gravity. The "
-			"graphics display is updated by the simulated robot joint angles"
+			"graphics display is updated by the simulated robot joint angles. "
+			"After a certain time, the simulated robot starts compensating for "
+			"gravity. After some more time, the gravity compensation "
+			"stops."
 		 << endl
 		 << endl;
 
 	// start the simulation
 	thread sim_thread(simulation, sim);
+
+	unsigned long long counter = 0;
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {
@@ -45,6 +50,16 @@ int main(int argc, char** argv) {
 		// time
 		graphics->updateRobotGraphics(robot_name, robot_q);
 		graphics->updateDisplayedWorld();
+
+		if(counter == 300) {
+			cout << "\nenabling gravity compensation\n" << endl;
+			sim->enableGravityCompensation(true);
+		}
+		if(counter == 500) {
+			cout << "\ndisabling gravity compensation\n" << endl;
+			sim->enableGravityCompensation(false);
+		}
+		counter++;
 	}
 
 	// stop simulation

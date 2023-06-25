@@ -31,6 +31,7 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 								bool verbose) {
 	_is_paused = false;
 	_time = 0;
+	_gravity_compensation_enabled = false;
 
 	// clean up robot names, models and force sensors
 	_robot_filenames.clear();
@@ -56,6 +57,8 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 		_robot_models[robot_name] = std::make_shared<Sai2Model::Sai2Model>(
 			robot_file, false, getRobotBaseTransform(robot_name),
 			_world->getGravity().eigen());
+		_applied_robot_torques[robot_name] =
+			Eigen::VectorXd::Zero(dof(robot_name));
 	}
 }
 
@@ -327,20 +330,7 @@ void Sai2Simulation::setJointTorques(const std::string& robot_name,
 		throw std::invalid_argument(
 			"size of torque vector inconsistent in setJointTorques");
 	}
-	auto robot = _world->getBaseNode(robot_name);
-	uint q_ind_counter = 0;
-	chai3d::cVector3d sph_tau;
-	for (unsigned int i = 0; i < robot->m_dynamicJoints.size(); ++i) {
-		if (robot->m_dynamicJoints[i]->getJointType() == DYN_JOINT_SPHERICAL) {
-			sph_tau =
-				Eigen::Vector3d(tau[q_ind_counter], tau[q_ind_counter + 1],
-								tau[q_ind_counter + 2]);
-			robot->m_dynamicJoints[i]->setTorque(sph_tau);
-			q_ind_counter += 3;
-		} else {
-			robot->m_dynamicJoints[i]->setForce(tau[q_ind_counter++]);
-		}
-	}
+	_applied_robot_torques.at(robot_name) = tau;
 }
 
 // set joint torque for a single joint
@@ -351,20 +341,40 @@ void Sai2Simulation::setJointTorque(const std::string& robot_name,
 			"cannot set torque for robot [" + robot_name +
 			"] that does not exists in simulated world");
 	}
-	auto robot = _world->getBaseNode(robot_name);
-	if (joint_id >= robot->m_dynamicJoints.size()) {
-		throw std::invalid_argument(
-			"cannot set torque for a joint out of bounds");
+	_applied_robot_torques.at(robot_name)(joint_id) = tau;
+}
+
+void Sai2Simulation::setAllJointTorquesInternal() {
+	for (const auto& pair : _applied_robot_torques) {
+		auto robot_name = pair.first;
+		auto tau = pair.second;
+		auto robot_model = _robot_models.at(robot_name);
+		Eigen::VectorXd gravity_torques =
+			Eigen::VectorXd::Zero(robot_model->dof());
+		if (_gravity_compensation_enabled) {
+			robot_model->jointGravityVector(gravity_torques);
+		}
+
+		auto robot = _world->getBaseNode(robot_name);
+		uint q_ind_counter = 0;
+		chai3d::cVector3d sph_tau;
+		for (unsigned int i = 0; i < robot->m_dynamicJoints.size(); ++i) {
+			if (robot->m_dynamicJoints[i]->getJointType() ==
+				DYN_JOINT_SPHERICAL) {
+				sph_tau = Eigen::Vector3d(
+					tau[q_ind_counter] + gravity_torques[q_ind_counter],
+					tau[q_ind_counter + 1] + gravity_torques[q_ind_counter + 1],
+					tau[q_ind_counter + 2] +
+						gravity_torques[q_ind_counter + 2]);
+				robot->m_dynamicJoints[i]->setTorque(sph_tau);
+				q_ind_counter += 3;
+			} else {
+				robot->m_dynamicJoints[i]->setForce(
+					gravity_torques[q_ind_counter] + tau[q_ind_counter]);
+				q_ind_counter++;
+			}
+		}
 	}
-	if (robot->m_dynamicJoints[joint_id]->getJointType() ==
-		DYN_JOINT_SPHERICAL) {
-		throw std::invalid_argument(
-			"cannot set individual torque for a spherical joint");
-	}
-	robot->m_dynamicJoints[joint_id]->setForce(tau);
-	// NOTE: we don't support spherical joints currently
-	// but in cDynamicJoint, spherical joints have a different function
-	// for setting torque: void setTorque(chai3d::cVector3d&)
 }
 
 // read joint accelerations
@@ -397,6 +407,8 @@ void Sai2Simulation::integrate() {
 	if (_is_paused) {
 		return;
 	}
+
+	setAllJointTorquesInternal();
 
 	// update dynamic world
 	_world->updateDynamics(_timestep);

@@ -47,15 +47,10 @@ int main(int argc, char** argv) {
 		// apply joint torque
 		sim->setJointTorques(robot_name, torques);
 
-		// get joint positions from simulation
-		Eigen::VectorXd robot_q;
-		sim->getJointPositions(robot_name, robot_q);
-
-		// update graphics. this automatically waits for the correct amount of
-		// time
-		graphics->updateRobotGraphics(robot_name, robot_q);
-		graphics->updateDisplayedWorld();
-		graphics->getUITorques(robot_name, torques);
+		// update graphics.
+		graphics->updateRobotGraphics(robot_name, sim->getJointPositions(robot_name));
+		graphics->renderGraphicsWorld();
+		torques = graphics->getUITorques(robot_name);
 	}
 
 	// stop simulation

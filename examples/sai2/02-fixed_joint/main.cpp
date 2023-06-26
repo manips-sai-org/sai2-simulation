@@ -39,17 +39,12 @@ int main(int argc, char** argv) {
 	// start the simulation
 	thread sim_thread(simulation, sim);
 
-	// while window is open:
 	while (graphics->isWindowOpen()) {
 		for (const auto& robot_name : sim->getRobotNames()) {
-			Eigen::VectorXd robot_q;
-			sim->getJointPositions(
-				robot_name, robot_q);  // read the joint values from simulation
-			graphics->updateRobotGraphics(
-				robot_name,
-				robot_q);  // update the graphics with those joint values
+			graphics->updateRobotGraphics(robot_name,
+										  sim->getJointPositions(robot_name));
 		}
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 	}
 
 	// stop simulation

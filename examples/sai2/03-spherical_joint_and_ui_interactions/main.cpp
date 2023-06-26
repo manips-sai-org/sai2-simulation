@@ -15,7 +15,6 @@ const string camera_name = "camera_fixed";
 bool fSimulationRunning = false;
 
 std::map<std::string, Eigen::VectorXd> ui_torques;
-std::map<std::string, Eigen::VectorXd> robot_q;
 
 // sim
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
@@ -28,7 +27,6 @@ int main(int argc, char** argv) {
 	std::vector<std::string> robot_names = sim->getRobotNames();
 	for (const auto& robot_name : robot_names) {
 		ui_torques[robot_name] = Eigen::VectorXd::Zero(sim->dof(robot_name));
-		robot_q[robot_name] = Eigen::VectorXd::Zero(sim->qSize(robot_name));
 	}
 
 	// load graphics scene
@@ -55,14 +53,13 @@ int main(int argc, char** argv) {
 	while (graphics->isWindowOpen()) {
 		// update graphics from latest simulation config
 		for (const auto& robot_name : robot_names) {
-			sim->getJointPositions(robot_name, robot_q[robot_name]);
-			graphics->updateRobotGraphics(robot_name, robot_q[robot_name]);
+			graphics->updateRobotGraphics(robot_name, sim->getJointPositions(robot_name));
 		}
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		// get the torques applied by the user via the ui
 		for (const auto& robot_name : robot_names) {
-			graphics->getUITorques(robot_name, ui_torques[robot_name]);
+			ui_torques[robot_name] = graphics->getUITorques(robot_name);
 		}
 	}
 

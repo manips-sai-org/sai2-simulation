@@ -46,7 +46,7 @@ public:
 	 * @param robot_name Name of the robot for which transaction is required.
 	 */
 	unsigned int dof(const std::string& robot_name) const;
-	unsigned int q_size(const std::string& robot_name) const;
+	unsigned int qSize(const std::string& robot_name) const;
 
 	void resetWorld(const std::string& path_to_world_file,
 					bool verbose = false);

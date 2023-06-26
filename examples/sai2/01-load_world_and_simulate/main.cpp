@@ -29,25 +29,18 @@ int main(int argc, char** argv) {
 
 	cout << endl
 		 << "This example loads a double pendulum and simulates gravity. The "
-<<<<<<< HEAD
-			"graphics display is updated by the simulated robot joint angles"
-=======
 			"graphics display is updated by the simulated robot joint angles. "
 			"After a certain time, the simulated robot starts compensating for "
 			"gravity. After some more time, the gravity compensation "
 			"stops."
->>>>>>> master
 		 << endl
 		 << endl;
 
 	// start the simulation
 	thread sim_thread(simulation, sim);
 
-<<<<<<< HEAD
-=======
 	unsigned long long counter = 0;
 
->>>>>>> master
 	// while window is open:
 	while (graphics->isWindowOpen()) {
 		// read joint position from simulation

@@ -43,13 +43,9 @@ int main(int argc, char** argv) {
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {
-		// read joint position from simulation
-		Eigen::VectorXd robot_q;
-		sim->getJointPositions(robot_name, robot_q);
-		// update graphics. this automatically waits for the correct amount of
-		// time
-		graphics->updateRobotGraphics(robot_name, robot_q);
-		graphics->updateDisplayedWorld();
+		// update graphics from simulation.
+		graphics->updateRobotGraphics(robot_name, sim->getJointPositions(robot_name));
+		graphics->renderGraphicsWorld();
 
 		if(counter == 300) {
 			cout << "\nenabling gravity compensation\n" << endl;

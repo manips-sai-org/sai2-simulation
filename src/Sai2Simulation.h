@@ -77,28 +77,6 @@ public:
 						   const Eigen::VectorXd& q);
 
 	/**
-	 * @brief Read back joint positions as an array.
-	 * @param robot_name Name of the robot for which transaction is required.
-	 * @param q_ret Array to write back joint positions into.
-	 */
-	void getJointPositions(const std::string& robot_name,
-						   Eigen::VectorXd& q_ret) const;
-
-	/**
-	 * @brief Read back position and orientation of an object.
-	 * @param object_name Name of the object for which transaction is required.
-	 * @param pos Array to write back position into.
-	 * @param ori Quaternion to write back orientation into.
-	 */
-	void getObjectPosition(const std::string& object_name, Eigen::Vector3d& pos,
-						   Eigen::Quaterniond& ori) const;
-
-	// set object pose
-	void setObjectPosition(const std::string& object_name,
-						   const Eigen::Vector3d& pos,
-						   const Eigen::Quaterniond& ori) const;
-
-	/**
 	 * @brief Set joint position for a single joint
 	 * @param robot_name Name of the robot for which transaction is required.
 	 * @param joint_id Joint number on which to set value.
@@ -106,6 +84,24 @@ public:
 	 */
 	void setJointPosition(const std::string& robot_name, unsigned int joint_id,
 						  double position);
+
+	/**
+	 * @brief Read back joint positions as an array.
+	 * @param robot_name Name of the robot for which transaction is required.
+	 * @return joint positions for that robot.
+	 */
+	Eigen::VectorXd getJointPositions(const std::string& robot_name) const;
+
+	/**
+	 * @brief Read back position and orientation of an object.
+	 * @param object_name Name of the object for which transaction is required.
+	 * @return pose of that object.
+	 */
+	Eigen::Affine3d getObjectPose(const std::string& object_name) const;
+
+	// set object pose
+	void setObjectPose(const std::string& object_name,
+					   const Eigen::Affine3d& pose) const;
 
 	/**
 	 * @brief Set joint velocities as an array. Assumes serial or tree chain
@@ -126,22 +122,19 @@ public:
 						  double velocity);
 
 	/**
-	 * @brief Read back joint velocities as an array.
+	 * @brief Get the joint velocities for a robot.
 	 * @param robot_name Name of the robot for which transaction is required.
-	 * @param dq_ret Array to write back joint velocities into.
+	 * @return joint velocities for that robot.
 	 */
-	void getJointVelocities(const std::string& robot_name,
-							Eigen::VectorXd& dq_ret) const;
+	Eigen::VectorXd getJointVelocities(const std::string& robot_name) const;
 
 	/**
-	 * @brief Read back linear and angular velocities of an object.
+	 * @brief Read back linear and angular velocities of an object as a 6d
+	 * vector (linear first, angular second).
 	 * @param object_name Name of the object for which transaction is required.
-	 * @param lin_vel Array to write back linear velocity into.
-	 * @param ang_vel Array to write back angular velocity into.
+	 * @return a 6d vector containing [lin_vel, ang_vel].
 	 */
-	void getObjectVelocity(const std::string& object_name,
-						   Eigen::Vector3d& lin_vel,
-						   Eigen::Vector3d& ang_vel) const;
+	Eigen::VectorXd getObjectVelocity(const std::string& object_name) const;
 
 	/**
 	 * @brief Set joint torques as an array. Assumes serial or tree chain robot.
@@ -161,12 +154,11 @@ public:
 						double tau);
 
 	/**
-	 * @brief Read back joint accelerations as an array.
+	 * @brief Get the joint accelerations for a given robot.
 	 * @param robot_name Name of the robot for which transaction is required.
-	 * @param ddq_ret Array to write back joint accelerations into.
+	 * @return joint accelerations for that robot.
 	 */
-	void getJointAccelerations(const std::string& robot_name,
-							   Eigen::VectorXd& ddq_ret) const;
+	Eigen::VectorXd getJointAccelerations(const std::string& robot_name) const;
 
 	/**
 	 * @brief Integrate the virtual world over the time step (1ms by default or
@@ -187,18 +179,16 @@ public:
 	void showLinksInContact(const std::string robot_name);
 
 	/**
-	 * @brief      Gets a vector of contact points and the corresponding contact
-	 * forces at a gicen link of a given object. Gives everything in base frame.
+	 * @brief      Gets the list of contacts on a given robot at a given link
 	 *
-	 * @param      contact_points  The contact points vector to be returned
-	 * @param      contact_forces  The contact forces vector to be returned
 	 * @param[in]  robot_name      The robot name
 	 * @param[in]  link_name       The link name
+	 * @return  a vector of pairs, the first element of the pair contains the
+	 * location of the contact point in world coordinates, and the second
+	 * contains the contact force in world coordinates
 	 */
-	void getContactList(std::vector<Eigen::Vector3d>& contact_points,
-						std::vector<Eigen::Vector3d>& contact_forces,
-						const ::std::string& robot_name,
-						const std::string& link_name);
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> getContactList(
+		const ::std::string& robot_name, const std::string& link_name) const;
 
 	void addSimulatedForceSensor(
 		const std::string& robot_name, const std::string& link_name,

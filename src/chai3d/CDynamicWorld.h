@@ -83,13 +83,11 @@ public:
     //! Get collision detection update rate.
     double getCollisionRate() { return (m_dynWorld->collisionStep()); };
 
-    //! get contact list for a given robot at a given link
-    void getContactList(std::vector<Eigen::Vector3d>& contact_points,
-                        std::vector<Eigen::Vector3d>& contact_forces,
-                        const ::std::string& robot_name,
-                        const std::string& link_name) const;
+	//! get contact list for a given robot at a given link
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> getContactList(
+		const ::std::string& robot_name, const std::string& link_name) const;
 
-    //-----------------------------------------------------------------------
+	//-----------------------------------------------------------------------
     // PUBLIC METHODS: (Graphics)
     //-----------------------------------------------------------------------
 

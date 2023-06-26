@@ -14,7 +14,6 @@ const string world_file_1 = "resources/world.urdf";
 const string world_file_2 = "resources/world2.urdf";
 
 unsigned long long simulation_counter = 0;
-Eigen::VectorXd q_robot;
 
 int main() {
 	// load simulation world
@@ -38,10 +37,9 @@ int main() {
 
 		// update graphics
 		for (const auto name : robot_names) {
-			sim->getJointPositions(name, q_robot);
-			graphics->updateRobotGraphics(name, q_robot);
+			graphics->updateRobotGraphics(name, sim->getJointPositions(name));
 		}
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		if (simulation_counter % 700 == 350) {
 			sim->resetWorld(world_file_2);

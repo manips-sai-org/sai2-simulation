@@ -36,13 +36,11 @@ int main() {
 
 		// update graphics
 		for (const auto name : robot_names) {
-			Eigen::VectorXd q_robot;
-			sim->getJointPositions(name, q_robot);
-			graphics->updateRobotGraphics(name, q_robot);
+			graphics->updateRobotGraphics(name, sim->getJointPositions(name));
 		}
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
-		if (loop_counter == 700) {
+		if (loop_counter == 300) {
 			cout << "elapsed sim time: " << sim->time() << " seconds" << endl;
 			cout << "number of loops: " << loop_counter << endl;
 			cout << "sim timestep was: " << sim->timestep() << " seconds"
@@ -50,13 +48,13 @@ int main() {
 			cout << "Pausing simulation" << endl << endl;
 			sim->pause();
 		}
-		if (loop_counter == 1000) {
+		if (loop_counter == 500) {
 			cout << "elapsed sim time: " << sim->time() << " seconds" << endl;
 			cout << "number of loops: " << loop_counter << endl;
 			cout << "unpausing simulation" << endl << endl;
 			sim->unpause();
 		}
-		if (loop_counter == 1500) {
+		if (loop_counter == 700) {
 			sim->resetWorld(world_file);
 			cout << endl
 				 << "elapsed sim time: " << sim->time() << " seconds" << endl;
@@ -65,7 +63,7 @@ int main() {
 				 << endl;
 			sim->setTimestep(0.05);
 		}
-		if (loop_counter == 2000) {
+		if (loop_counter == 900) {
 			cout << "elapsed sim time: " << sim->time() << " seconds" << endl;
 			cout << "number of loops: " << loop_counter << endl;
 			cout << "sim timestep was: " << sim->timestep() << " seconds"

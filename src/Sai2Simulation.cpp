@@ -33,10 +33,13 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	_time = 0;
 	_gravity_compensation_enabled = false;
 
-	// clean up robot names, models and force sensors
+	// clean up robot names, models, torques and force sensors
 	_robot_filenames.clear();
 	_robot_models.clear();
 	_force_sensors.clear();
+	_applied_robot_torques.clear();
+	_dyn_object_base_pos.clear();
+	_dyn_object_base_rot.clear();
 
 	// create a dynamics world
 	_world = std::make_shared<cDynamicWorld>(nullptr);
@@ -131,15 +134,15 @@ void Sai2Simulation::setJointPositions(const std::string& robot_name,
 }
 
 // read joint positions
-void Sai2Simulation::getJointPositions(const std::string& robot_name,
-									   Eigen::VectorXd& q_ret) const {
+Eigen::VectorXd Sai2Simulation::getJointPositions(
+	const std::string& robot_name) const {
 	if (!existsInSimulatedWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot get positions for robot [" + robot_name +
 			"] that does not exists in simulated world");
 	}
 	auto robot = _world->getBaseNode(robot_name);
-	q_ret.setZero(qSize(robot_name));
+	Eigen::VectorXd q_ret(qSize(robot_name));
 	uint q_ind_counter = 0;
 	uint sph_joint_counter = 0;
 	uint dofs = dof(robot_name);
@@ -157,45 +160,52 @@ void Sai2Simulation::getJointPositions(const std::string& robot_name,
 			q_ret[q_ind_counter++] = robot->m_dynamicJoints[i]->getPos();
 		}
 	}
+	return q_ret;
 }
 
 // read object pose
-void Sai2Simulation::getObjectPosition(const std::string& object_name,
-									   Eigen::Vector3d& pos,
-									   Eigen::Quaterniond& ori) const {
+Eigen::Affine3d Sai2Simulation::getObjectPose(
+	const std::string& object_name) const {
 	if (!existsInSimulatedWorld(object_name)) {
 		throw std::invalid_argument(
-			"cannot get positions for object [" + object_name +
+			"cannot get pose for object [" + object_name +
 			"] that does not exists in simulated world");
 	}
 	auto object = _world->getBaseNode(object_name);
-	pos << object->m_dynamicJoints[0]->getPos(),
+	Eigen::Affine3d pose_ret;
+	Eigen::Quaterniond ori_tmp;
+	pose_ret.translation() << object->m_dynamicJoints[0]->getPos(),
 		object->m_dynamicJoints[1]->getPos(),
 		object->m_dynamicJoints[2]->getPos();
-	pos = _dyn_object_base_rot.at(object_name).toRotationMatrix() * pos;
-	pos += _dyn_object_base_pos.at(object_name);
+	pose_ret.translation() =
+		_dyn_object_base_rot.at(object_name).toRotationMatrix() *
+		pose_ret.translation();
+	pose_ret.translation() += _dyn_object_base_pos.at(object_name);
 
 	chai3d::cQuaternion quat = object->m_dynamicJoints[3]->getPosSpherical();
-	ori = _dyn_object_base_rot.at(object_name) *
-		  Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z);
+	ori_tmp = _dyn_object_base_rot.at(object_name) *
+			  Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z);
+
+	pose_ret.linear() = ori_tmp.toRotationMatrix();
+	return pose_ret;
 }
 
 // set object pose
-void Sai2Simulation::setObjectPosition(const std::string& object_name,
-									   const Eigen::Vector3d& pos,
-									   const Eigen::Quaterniond& ori) const {
+void Sai2Simulation::setObjectPose(const std::string& object_name,
+								   const Eigen::Affine3d& pose) const {
 	if (!existsInSimulatedWorld(object_name)) {
 		throw std::invalid_argument(
-			"cannot set positions for object [" + object_name +
+			"cannot set pose for object [" + object_name +
 			"] that does not exists in simulated world");
 	}
 	auto object = _world->getBaseNode(object_name);
 
 	Eigen::Vector3d object_pos_local =
 		_dyn_object_base_rot.at(object_name).toRotationMatrix().transpose() *
-		(pos - _dyn_object_base_pos.at(object_name));
+		(pose.translation() - _dyn_object_base_pos.at(object_name));
 	Eigen::Quaterniond object_rot_local =
-		_dyn_object_base_rot.at(object_name).inverse() * ori;
+		_dyn_object_base_rot.at(object_name).inverse() *
+		Eigen::Quaterniond(pose.rotation());
 	for (int i = 0; i < 3; i++) {
 		object->m_dynamicJoints[i]->setPos(object_pos_local(i));
 	}
@@ -277,15 +287,15 @@ void Sai2Simulation::setJointVelocity(const std::string& robot_name,
 }
 
 // read joint velocities
-void Sai2Simulation::getJointVelocities(const std::string& robot_name,
-										Eigen::VectorXd& dq_ret) const {
+Eigen::VectorXd Sai2Simulation::getJointVelocities(
+	const std::string& robot_name) const {
 	if (!existsInSimulatedWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot get velocities for robot [" + robot_name +
 			"] that does not exists in simulated world");
 	}
 	auto robot = _world->getBaseNode(robot_name);
-	dq_ret.setZero(dof(robot_name));
+	Eigen::VectorXd dq_ret(dof(robot_name));
 	uint q_ind_counter = 0;
 	uint dofs = dof(robot_name);
 	chai3d::cVector3d sph_vel;
@@ -300,22 +310,24 @@ void Sai2Simulation::getJointVelocities(const std::string& robot_name,
 			dq_ret[q_ind_counter++] = robot->m_dynamicJoints[i]->getVel();
 		}
 	}
+	return dq_ret;
 }
 
 // read object velocities
-void Sai2Simulation::getObjectVelocity(const std::string& object_name,
-									   Eigen::Vector3d& lin_vel,
-									   Eigen::Vector3d& ang_vel) const {
+Eigen::VectorXd Sai2Simulation::getObjectVelocity(
+	const std::string& object_name) const {
 	if (!existsInSimulatedWorld(object_name)) {
 		throw std::invalid_argument(
 			"cannot get velocities for object [" + object_name +
 			"] that does not exists in simulated world");
 	}
 	auto object = _world->getBaseNode(object_name);
-	lin_vel << object->m_dynamicJoints[0]->getVel(),
+	Eigen::VectorXd vel_ret(6);
+	vel_ret.head(3) << object->m_dynamicJoints[0]->getVel(),
 		object->m_dynamicJoints[1]->getVel(),
 		object->m_dynamicJoints[2]->getVel();
-	ang_vel = object->m_dynamicJoints[3]->getVelSpherical().eigen();
+	vel_ret.tail(3) = object->m_dynamicJoints[3]->getVelSpherical().eigen();
+	return vel_ret;
 }
 
 // set joint torques
@@ -378,15 +390,15 @@ void Sai2Simulation::setAllJointTorquesInternal() {
 }
 
 // read joint accelerations
-void Sai2Simulation::getJointAccelerations(const std::string& robot_name,
-										   Eigen::VectorXd& ddq_ret) const {
+Eigen::VectorXd Sai2Simulation::getJointAccelerations(
+	const std::string& robot_name) const {
 	if (!existsInSimulatedWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot get accelerations for robot [" + robot_name +
 			"] that does not exists in simulated world");
 	}
 	auto robot = _world->getBaseNode(robot_name);
-	ddq_ret.setZero(dof(robot_name));
+	Eigen::VectorXd ddq_ret(dof(robot_name));
 	uint q_ind_counter = 0;
 	chai3d::cVector3d sph_acc;
 	for (unsigned int i = 0; i < robot->m_dynamicJoints.size(); ++i) {
@@ -400,6 +412,7 @@ void Sai2Simulation::getJointAccelerations(const std::string& robot_name,
 			ddq_ret[q_ind_counter++] = robot->m_dynamicJoints[i]->getAccel();
 		}
 	}
+	return ddq_ret;
 }
 
 // integrate ahead
@@ -414,12 +427,11 @@ void Sai2Simulation::integrate() {
 	_world->updateDynamics(_timestep);
 	_time += _timestep;
 	// update robot models
-	for (auto robot_name_model : _robot_models) {
-		Eigen::VectorXd q_robot =
-			Eigen::VectorXd::Zero(robot_name_model.second->qSize());
-		getJointPositions(robot_name_model.first, q_robot);
-		robot_name_model.second->setQ(q_robot);
-		robot_name_model.second->updateKinematics();
+	for (auto pair : _robot_models) {
+		auto robot_name = pair.first;
+		auto robot_model = pair.second;
+		robot_model->setQ(getJointPositions(robot_name));
+		robot_model->updateKinematics();
 	}
 	// update force sensors if any
 	for (auto sensor : _force_sensors) {
@@ -485,12 +497,10 @@ void Sai2Simulation::showLinksInContact(const std::string robot_name) {
 	}
 }
 
-void Sai2Simulation::getContactList(
-	std::vector<Eigen::Vector3d>& contact_points,
-	std::vector<Eigen::Vector3d>& contact_forces,
-	const ::std::string& robot_name, const std::string& link_name) {
-	_world->getContactList(contact_points, contact_forces, robot_name,
-						   link_name);
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+Sai2Simulation::getContactList(const ::std::string& robot_name,
+							   const std::string& link_name) const {
+	return _world->getContactList(robot_name, link_name);
 }
 
 void Sai2Simulation::addSimulatedForceSensor(

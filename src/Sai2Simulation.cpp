@@ -80,13 +80,13 @@ unsigned int Sai2Simulation::dof(const std::string& robot_name) const {
 	return _robot_models.at(robot_name)->dof();
 }
 
-unsigned int Sai2Simulation::q_size(const std::string& robot_name) const {
+unsigned int Sai2Simulation::qSize(const std::string& robot_name) const {
 	if (!existsInSimulatedWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot get dof for robot [" + robot_name +
 			"] that does not exists in simulated world");
 	}
-	return _robot_models.at(robot_name)->q_size();
+	return _robot_models.at(robot_name)->qSize();
 }
 
 void Sai2Simulation::setTimestep(const double dt) {
@@ -105,7 +105,7 @@ void Sai2Simulation::setJointPositions(const std::string& robot_name,
 			"cannot set positions for robot [" + robot_name +
 			"] that does not exists in simulated world");
 	}
-	if (q.size() != q_size(robot_name)) {
+	if (q.size() != qSize(robot_name)) {
 		throw std::invalid_argument(
 			"q_size mismatch, cannot set positions for robot [" + robot_name +
 			"]");
@@ -139,7 +139,7 @@ void Sai2Simulation::getJointPositions(const std::string& robot_name,
 			"] that does not exists in simulated world");
 	}
 	auto robot = _world->getBaseNode(robot_name);
-	q_ret.setZero(q_size(robot_name));
+	q_ret.setZero(qSize(robot_name));
 	uint q_ind_counter = 0;
 	uint sph_joint_counter = 0;
 	uint dofs = dof(robot_name);
@@ -416,9 +416,9 @@ void Sai2Simulation::integrate() {
 	// update robot models
 	for (auto robot_name_model : _robot_models) {
 		Eigen::VectorXd q_robot =
-			Eigen::VectorXd::Zero(robot_name_model.second->q_size());
+			Eigen::VectorXd::Zero(robot_name_model.second->qSize());
 		getJointPositions(robot_name_model.first, q_robot);
-		robot_name_model.second->set_q(q_robot);
+		robot_name_model.second->setQ(q_robot);
 		robot_name_model.second->updateKinematics();
 	}
 	// update force sensors if any

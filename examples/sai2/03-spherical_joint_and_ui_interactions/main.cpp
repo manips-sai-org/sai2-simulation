@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 	std::vector<std::string> robot_names = sim->getRobotNames();
 	for (const auto& robot_name : robot_names) {
 		ui_torques[robot_name] = Eigen::VectorXd::Zero(sim->dof(robot_name));
-		robot_q[robot_name] = Eigen::VectorXd::Zero(sim->q_size(robot_name));
+		robot_q[robot_name] = Eigen::VectorXd::Zero(sim->qSize(robot_name));
 	}
 
 	// load graphics scene

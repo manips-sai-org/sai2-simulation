@@ -57,8 +57,11 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	for (const auto& pair : _robot_filenames) {
 		const auto& robot_name = pair.first;
 		const auto& robot_file = pair.second;
-		_robot_models[robot_name] = std::make_shared<Sai2Model::Sai2Model>(
-			robot_file, false, getRobotBaseTransform(robot_name),
+		_robot_models[robot_name] =
+			std::make_shared<Sai2Model::Sai2Model>(robot_file, false);
+		_robot_models[robot_name]->setTRobotBase(
+			getRobotBaseTransform(robot_name));
+		_robot_models[robot_name]->setWorldGravity(
 			_world->getGravity().eigen());
 		_applied_robot_torques[robot_name] =
 			Eigen::VectorXd::Zero(dof(robot_name));
@@ -364,7 +367,7 @@ void Sai2Simulation::setAllJointTorquesInternal() {
 		Eigen::VectorXd gravity_torques =
 			Eigen::VectorXd::Zero(robot_model->dof());
 		if (_gravity_compensation_enabled) {
-			robot_model->jointGravityVector(gravity_torques);
+			gravity_torques = robot_model->jointGravityVector();
 		}
 
 		auto robot = _world->getBaseNode(robot_name);
@@ -556,8 +559,8 @@ const Eigen::Vector3d Sai2Simulation::getSensedMoment(
 	return _force_sensors.at(sensor_index)->getMomentWorldFrame();
 }
 
-const std::vector<Sai2Model::ForceSensorData> Sai2Simulation::getAllForceSensorData()
-	const {
+const std::vector<Sai2Model::ForceSensorData>
+Sai2Simulation::getAllForceSensorData() const {
 	std::vector<Sai2Model::ForceSensorData> sensor_data;
 	for (const auto& sensor : _force_sensors) {
 		sensor_data.push_back(sensor->getData());
@@ -568,16 +571,16 @@ const std::vector<Sai2Model::ForceSensorData> Sai2Simulation::getAllForceSensorD
 const int Sai2Simulation::findSimulatedForceSensor(
 	const std::string& robot_name, const std::string& link_name) const {
 	for (int i = 0; i < _force_sensors.size(); ++i) {
-		if ((_force_sensors.at(i)->getData()._robot_name == robot_name) &&
-			(_force_sensors.at(i)->getData()._link_name == link_name)) {
+		if ((_force_sensors.at(i)->getData().robot_name == robot_name) &&
+			(_force_sensors.at(i)->getData().link_name == link_name)) {
 			return i;
 		}
 	}
 	return -1;
 }
 
-const bool Sai2Simulation::existsInSimulatedWorld(const std::string& robot_name,
-											const std::string link_name) const {
+const bool Sai2Simulation::existsInSimulatedWorld(
+	const std::string& robot_name, const std::string link_name) const {
 	auto robot = _world->getBaseNode(robot_name);
 	if (robot == NULL) {
 		return false;

@@ -15,7 +15,6 @@ const string robot_name = "PPPBot";
 const string link_name = "sensor_link";
 
 unsigned long long simulation_counter = 0;
-Eigen::VectorXd q_robot;
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
@@ -39,8 +38,8 @@ int main() {
 	}
 
 	// offset a joint initial condition
-	sim->getJointPositions(robot_name, q_robot);
-	sim->setJointPosition(robot_name, 0, q_robot[0] + 0.5);
+	sim->setJointPosition(robot_name, 0,
+						  sim->getJointPositions(robot_name)[0] + 0.5);
 
 	sim->setCollisionRestitution(0);
 
@@ -49,16 +48,13 @@ int main() {
 		// update simulation
 		sim->integrate();
 
-		// update kinematic models
-		sim->getJointPositions(robot_name, q_robot);
-
-		// update graphics. this automatically waits for the correct amount of
-		// time
-		graphics->updateRobotGraphics(robot_name, q_robot);
+		// update graphics.
+		graphics->updateRobotGraphics(robot_name,
+									  sim->getJointPositions(robot_name));
 		for (const auto sensor_data : sim->getAllForceSensorData()) {
 			graphics->updateDisplayedForceSensor(sensor_data);
 		}
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		if (simulation_counter == 150) {
 			sim->setJointTorque(robot_name, 1, -70);

@@ -26,11 +26,7 @@ ForceSensorSim::~ForceSensorSim() {
 void ForceSensorSim::update(const std::shared_ptr<cDynamicWorld> dyn_world) {
 	// NOTE that this assumes that the robot model is updated
 	// get the list of contact forces acting on the link
-	std::vector<Eigen::Vector3d> force_list;
-	std::vector<Eigen::Vector3d> point_list;
-	dyn_world->getContactList(
-		point_list,
-		force_list,
+	auto contact_list = dyn_world->getContactList(
 		_data._robot_name,
 		_data._link_name);
 	// zero out current forces and moments
@@ -39,17 +35,17 @@ void ForceSensorSim::update(const std::shared_ptr<cDynamicWorld> dyn_world) {
 	_data._force_local_frame.setZero();
 	_data._moment_local_frame.setZero();
 	// if list is empty, simply set forces and moments to 0
-	if(point_list.empty()) {
+	if(contact_list.empty()) {
 		return;
 	}
 	// transform to sensor frame
 	Eigen::Vector3d rel_pos;
 	Eigen::Vector3d link_pos;
 	_robot->positionInWorld(link_pos, _data._link_name, _data._transform_in_link.translation());
-	for (uint pt_ind=0; pt_ind < point_list.size(); ++pt_ind) {
-		_data._force_world_frame -= force_list[pt_ind];
-		rel_pos = point_list[pt_ind] - link_pos;
-		_data._moment_world_frame -= rel_pos.cross(force_list[pt_ind]);
+	for (uint pt_ind=0; pt_ind < contact_list.size(); ++pt_ind) {
+		_data._force_world_frame -= contact_list[pt_ind].second;
+		rel_pos = contact_list[pt_ind].first - link_pos;
+		_data._moment_world_frame -= rel_pos.cross(contact_list[pt_ind].second);
 	}
 
 	if (_first_iteration)

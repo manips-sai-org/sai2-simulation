@@ -23,16 +23,13 @@ int main() {
 	// load simulation world
 	auto sim = new Sai2Simulation::Sai2Simulation(world_file);
 	sim->setTimestep(0.01);
-	std::vector<Eigen::Vector3d> contact_points;
-	std::vector<Eigen::Vector3d> contact_forces;
 
 	// load graphics scene
 	auto graphics = new Sai2Graphics::Sai2Graphics(world_file);
 
 	// offset a joint initial condition
-	sim->getJointPositions(robot_name, q_robot);
-	sim->setJointPosition(robot_name, 0, q_robot[0] + 0.5);
-
+	sim->setJointPosition(robot_name, 0,
+						  sim->getJointPositions(robot_name)[0] + 0.5);
 	sim->setCollisionRestitution(0);
 
 	// while window is open:
@@ -40,29 +37,25 @@ int main() {
 		// update simulation
 		sim->integrate();
 
-		// update kinematic models
-		sim->getJointPositions(robot_name, q_robot);
-
-		// update graphics. this automatically waits for the correct amount of
-		// time
-		graphics->updateRobotGraphics(robot_name, q_robot);
+		// update graphics.
+		graphics->updateRobotGraphics(robot_name,
+									  sim->getJointPositions(robot_name));
 		for (const auto sensor_data : sim->getAllForceSensorData()) {
 			graphics->updateDisplayedForceSensor(sensor_data);
 		}
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		if (simulation_counter % 100 == 0) {
-			sim->getContactList(contact_points, contact_forces, robot_name,
-								"sensor_link");
-			if (!contact_points.empty()) {
+			auto contact_list = sim->getContactList(robot_name, "sensor_link");
+			if (!contact_list.empty()) {
 				std::cout << "contact at " << robot_name << " sensor_link"
 						  << std::endl;
-				int n = contact_points.size();
+				int n = contact_list.size();
 				for (int i = 0; i < n; i++) {
 					std::cout << "contact point " << i << " : "
-							  << contact_points[i].transpose() << "\n";
+							  << contact_list[i].first.transpose() << "\n";
 					std::cout << "contact force " << i << " : "
-							  << contact_forces[i].transpose() << "\n";
+							  << contact_list[i].second.transpose() << "\n";
 				}
 				std::cout << endl;
 			}

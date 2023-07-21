@@ -60,6 +60,9 @@ public:
 	void pause() { _is_paused = true; }
 	void unpause() { _is_paused = false; }
 
+	void enableJointLimits(const std::string& robot_name);
+	void disableJointLimits(const std::string& robot_name);
+
 	void enableGravityCompensation(const bool enable) {
 		_gravity_compensation_enabled = enable;
 	}

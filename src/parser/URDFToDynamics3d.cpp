@@ -644,15 +644,6 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model, boo
 					}
 				}
 			}
-			if (0 != urdf_joint->limits) {
-				if (urdf_joint_type != urdf::Joint::SPHERICAL) {
-					dyn_joint->setJointLimits(urdf_joint->limits->lower,
-											  urdf_joint->limits->upper, 0.05);
-				} else {
-					throw std::runtime_error(
-						"joint limits not supported on spherical joint");
-				}
-			}
 			if (0 != urdf_joint->dynamics) {
 				dyn_joint->setDamping(urdf_joint->dynamics->damping);
 			}

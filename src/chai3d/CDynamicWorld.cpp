@@ -204,8 +204,9 @@ cDynamicBase* cDynamicWorld::newBaseObject(const cVector3d& a_pos, const cMatrix
     a_rot.toAxisAngle(caxis, angle);
     axis.set(caxis.x(), caxis.y(), caxis.z());
     m_dynWorld->frame.rotate(axis, angle);
-    cDynBaseNode* baseNode = m_dynWorld->insert(newBaseObject->m_dynBaseObject,"");
-    m_dynWorld->frame.pop();
+	cDynBaseNode* baseNode = m_dynWorld->insert(newBaseObject->m_dynBaseObject,
+												const_cast<char*>(""));
+	m_dynWorld->frame.pop();
 
     newBaseObject->m_dynBaseNode = baseNode;   
     baseNode->contact()->callback( newBaseObject->m_dynamicContacts);

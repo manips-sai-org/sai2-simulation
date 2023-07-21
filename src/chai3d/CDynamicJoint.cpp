@@ -141,6 +141,7 @@ chai3d::cQuaternion  cDynamicJoint::getPosSpherical()
 
         return ret_value;
     }
+    throw std::runtime_error("cannot getPosSpherical for non spherical joint");
 }
 
 //===========================================================================
@@ -290,7 +291,7 @@ void cDynamicJoint::setTorque(chai3d::cVector3d& a_torque)
 //===========================================================================
 void cDynamicJoint::setJointLimits(double a_jointLimitMin, double a_jointLimitMax, double a_error)
 {
-    if m_jointType == DYN_JOINT_CONTINUOUS {
+    if(m_jointType == DYN_JOINT_CONTINUOUS) {
         return;
     }
     double error = cAbs(a_error);

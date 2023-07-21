@@ -65,6 +65,7 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 			_world->getGravity().eigen());
 		_applied_robot_torques[robot_name] =
 			Eigen::VectorXd::Zero(dof(robot_name));
+		enableJointLimits(robot_name);
 	}
 }
 
@@ -101,6 +102,44 @@ void Sai2Simulation::setTimestep(const double dt) {
 			"simulation timestep cannot be 0 or negative");
 	}
 	_timestep = dt;
+}
+
+void Sai2Simulation::enableJointLimits(const std::string& robot_name) {
+	if (!existsInSimulatedWorld(robot_name)) {
+		throw std::invalid_argument(
+			"cannot enable joint limits robot [" + robot_name +
+			"] that does not exists in simulated world");
+	}
+	VectorXd q = getJointPositions(robot_name);
+	auto dyn_robot = _world->getBaseNode(robot_name);
+	for (const Sai2Model::JointLimit joint_limit :
+		 _robot_models.at(robot_name)->jointLimits()) {
+		auto dyn_joint = dyn_robot->getJoint(joint_limit.joint_name);
+		double current_joint_pos =
+			q(_robot_models.at(robot_name)->jointIndex(joint_limit.joint_name));
+		if (current_joint_pos > joint_limit.position_upper ||
+			current_joint_pos < joint_limit.position_lower) {
+			throw std::runtime_error(
+				"Cannot enable joint limits for joint [" +
+				joint_limit.joint_name + "] in robot [" + robot_name +
+				"] that is currently outside of its limits");
+		}
+		dyn_joint->setJointLimits(joint_limit.position_lower, joint_limit.position_upper);
+	}
+}
+
+void Sai2Simulation::disableJointLimits(const std::string& robot_name) {
+	if (!existsInSimulatedWorld(robot_name)) {
+		throw std::invalid_argument(
+			"cannot disable joint limits robot [" + robot_name +
+			"] that does not exists in simulated world");
+	}	
+	auto dyn_robot = _world->getBaseNode(robot_name);
+	for (const Sai2Model::JointLimit joint_limit :
+		 _robot_models.at(robot_name)->jointLimits()) {
+		auto dyn_joint = dyn_robot->getJoint(joint_limit.joint_name);
+		dyn_joint->removeJointLimits();
+	}
 }
 
 // set joint positions

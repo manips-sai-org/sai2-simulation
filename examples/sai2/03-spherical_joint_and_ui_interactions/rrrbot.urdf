@@ -99,26 +99,23 @@
         </visual>
     </link>
 
-    <joint name="j0" type="revolute">
+    <joint name="j0" type="continuous">
         <parent link="base_link" />
         <child link="link0" />
         <origin xyz="0.000000 0.000000 0.000000" rpy="-0.000000 0.000000 -0.000000" />
         <axis xyz="1 0 0" />
-        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
-    <joint name="j1" type="revolute">
+    <joint name="j1" type="continuous">
         <parent link="link0" />
         <child link="link1" />
         <origin xyz="0.000000 0.000000 0.000000" rpy="-0.000000 0.000000 -0.000000" />
         <axis xyz="0 1 0" />
-        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
-    <joint name="j2" type="revolute">
+    <joint name="j2" type="continuous">
         <parent link="link1" />
         <child link="link2" />
         <origin xyz="0.000000 0.000000 0.000000" rpy="-0.000000 0.000000 -0.000000" />
         <axis xyz="0 0 1" />
-        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
     <joint name="j3" type="fixed">
         <parent link="link2" />

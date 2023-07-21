@@ -34,16 +34,16 @@ public:
 	void update(const std::shared_ptr<cDynamicWorld> dyn_world);
 
 	// get force applied to sensor body in world coordinates
-	Eigen::Vector3d getForceWorldFrame() const {return _data._force_world_frame;};
+	Eigen::Vector3d getForceWorldFrame() const {return _data.force_world_frame;};
 
 	// get force applied to sensor body in local sensor frame
-	Eigen::Vector3d getForceLocalFrame() const {return _data._force_local_frame;};
+	Eigen::Vector3d getForceLocalFrame() const {return _data.force_local_frame;};
 
 	// get moment applied to sensor body in world coordinates
-	Eigen::Vector3d getMomentWorldFrame() const {return _data._moment_world_frame;};
+	Eigen::Vector3d getMomentWorldFrame() const {return _data.moment_world_frame;};
 
 	// get moment applied to sensor body in local sensor frame
-	Eigen::Vector3d getMomentLocalFrame() const {return _data._moment_local_frame;};
+	Eigen::Vector3d getMomentLocalFrame() const {return _data.moment_local_frame;};
 
 	// get full data
 	Sai2Model::ForceSensorData getData() const {return _data;}

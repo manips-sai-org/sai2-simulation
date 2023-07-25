@@ -36,7 +36,7 @@ cDynamicJoint::cDynamicJoint(cDynamicLink* a_parentLink, int a_jointType, int a_
     m_dynamicParentBase = m_dynamicParentLink->m_dynamicParentBase;
 
     // sanity check
-    if ((m_jointType < 0) || (m_jointType > 2)) 
+    if ((m_jointType < 0) || (m_jointType > 3)) 
     {
         m_jointType = 0;
     }
@@ -56,6 +56,7 @@ cDynamicJoint::cDynamicJoint(cDynamicLink* a_parentLink, int a_jointType, int a_
         break;
 
         case DYN_JOINT_REVOLUTE:
+        case DYN_JOINT_CONTINUOUS:
             m_dynJoint = dynObject->joint.revolute(cDynAxis(m_jointAxis));
         break;
 
@@ -140,6 +141,7 @@ chai3d::cQuaternion  cDynamicJoint::getPosSpherical()
 
         return ret_value;
     }
+    throw std::runtime_error("cannot getPosSpherical for non spherical joint");
 }
 
 //===========================================================================
@@ -289,6 +291,9 @@ void cDynamicJoint::setTorque(chai3d::cVector3d& a_torque)
 //===========================================================================
 void cDynamicJoint::setJointLimits(double a_jointLimitMin, double a_jointLimitMax, double a_error)
 {
+    if(m_jointType == DYN_JOINT_CONTINUOUS) {
+        return;
+    }
     double error = cAbs(a_error);
     if ((a_jointLimitMin + error) < (a_jointLimitMax - error))
     {

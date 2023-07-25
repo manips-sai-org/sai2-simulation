@@ -31,7 +31,8 @@ int main(int argc, char** argv) {
 		 << "This example simulates a double pendulum robot with joint limits. "
 			"The robot will stop in its fall because of the limits, It is "
 			"possible to interact with the robot using right click to bring "
-			"it up to its upper limit as well. In addition. damping on "
+			"it up to its upper limit as well. After some time, the joint "
+			"limits are disabled in the simulation. In addition. damping on "
 			"the joints is enabled by setting the <dynamics damping=\" ... "
 			"\"/> in the robot urdf file for the joints"
 		 << endl
@@ -48,7 +49,8 @@ int main(int argc, char** argv) {
 		sim->setJointTorques(robot_name, torques);
 
 		// update graphics.
-		graphics->updateRobotGraphics(robot_name, sim->getJointPositions(robot_name));
+		graphics->updateRobotGraphics(robot_name,
+									  sim->getJointPositions(robot_name));
 		graphics->renderGraphicsWorld();
 		torques = graphics->getUITorques(robot_name);
 	}
@@ -65,9 +67,16 @@ void simulation(shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 	fSimulationRunning = true;
 	double timestep = sim->timestep();
 
+	unsigned long long sim_counter = 0;
 	while (fSimulationRunning) {
 		usleep(timestep * 1e6);
 		// integrate forward
 		sim->integrate();
+
+		if (sim_counter == 3000) {	// disable joint limits after ~3 seconds
+			std::cout << "\ndisabling joint limits\n" << std::endl;
+			sim->disableJointLimits(sim->getRobotNames()[0]);
+		}
+		sim_counter++;
 	}
 }

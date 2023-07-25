@@ -585,13 +585,25 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model, boo
 				}
 				dyn_joint = dyn_link->newJoint(DYN_JOINT_PRISMATIC, axis_type);
 				break;
+			case urdf::Joint::CONTINUOUS:
+				if (urdf_joint->axis.x > 0.9) {
+					axis_type = DYN_AXIS_X;
+				} else if (urdf_joint->axis.y > 0.9) {
+					axis_type = DYN_AXIS_Y;
+				} else if (urdf_joint->axis.z > 0.9) {
+					axis_type = DYN_AXIS_Z;
+				} else {
+					cerr << "Unsupported joint axis " << joint_names[j] << endl;
+					abort();
+				}
+				dyn_joint = dyn_link->newJoint(DYN_JOINT_CONTINUOUS, axis_type);
+				break;
 			case urdf::Joint::SPHERICAL:
 				dyn_joint = dyn_link->newJoint(DYN_JOINT_SPHERICAL);
 				break;
 			// currently unsupported joint types:
 			case urdf::Joint::FLOATING:
 			case urdf::Joint::PLANAR:
-			case urdf::Joint::CONTINUOUS:
 				cerr << "Unsupported joint type on joint " << joint_names[j] << endl;
 				abort();
 				break;
@@ -630,15 +642,6 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model, boo
 					{
 						throw std::invalid_argument("need to use rising field to set initial position for prismatic joint : " + dyn_joint->m_name);
 					}
-				}
-			}
-			if (0 != urdf_joint->limits) {
-				if (urdf_joint_type != urdf::Joint::SPHERICAL) {
-					dyn_joint->setJointLimits(urdf_joint->limits->lower,
-											  urdf_joint->limits->upper, 0.05);
-				} else {
-					throw std::runtime_error(
-						"joint limits not supported on spherical joint");
 				}
 			}
 			if (0 != urdf_joint->dynamics) {

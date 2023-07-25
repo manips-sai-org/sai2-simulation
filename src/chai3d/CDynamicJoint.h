@@ -21,6 +21,7 @@ class cDynamicLink;
 const int DYN_JOINT_PRISMATIC = 0;
 const int DYN_JOINT_REVOLUTE  = 1;
 const int DYN_JOINT_SPHERICAL = 2;
+const int DYN_JOINT_CONTINUOUS = 3;
 //---------------------------------------------------------------------------
 const int DYN_AXIS_X = 0;
 const int DYN_AXIS_Y = 1;
@@ -105,14 +106,14 @@ public:
     //! Set torque (spherical joints only)
     void setTorque(chai3d::cVector3d& a_torque);
 
-    //! Get joint type. (Prismatic, Revolute, Spherical).
+    //! Get joint type. (Prismatic, Revolute, Spherical, Continuous).
     int getJointType() { return(m_jointType); }
 
     //! Get axis type. X, Y or Z.
     int getJointAxis() { return(m_jointAxis); }
 
     //! Set minimum joint limit.
-    void setJointLimits(double a_jointLimitMin, double a_jointLimitMax, double a_error);
+    void setJointLimits(double a_jointLimitMin, double a_jointLimitMax, double a_error = 0.05);
 
     //! Remove joint limits
     void removeJointLimits();
@@ -140,7 +141,7 @@ public:
 
 protected:
 
-    //! Joint type (DYN_JOINT_PRISMATIC, DYN_JOINT_REVOLUTE, DYN_JOINT_SPHERICAL)
+    //! Joint type (DYN_JOINT_PRISMATIC, DYN_JOINT_REVOLUTE, DYN_JOINT_SPHERICAL, DYN_JOINT_CONTINUOUS)
     int m_jointType;
 
     //! Joint axis (DYN_AXIS_X, DYN_AXIS_Y, DYN_AXIS_Z)

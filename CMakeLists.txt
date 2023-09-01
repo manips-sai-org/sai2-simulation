@@ -57,6 +57,10 @@ include_directories(${SAI2-MODEL_INCLUDE_DIRS})
 find_package(RBDL QUIET)
 include_directories(${RBDL_INCLUDE_DIR})
 
+# include Sai2-Common
+find_package(SAI2-COMMON REQUIRED)
+include_directories(${SAI2-COMMON_INCLUDE_DIRS})
+
 # optional settings
 include (${PROJECT_SOURCE_DIR}/CMakeOptions.txt OPTIONAL)
 
@@ -145,6 +149,7 @@ set (SAI2-SIMULATION_LIBRARIES sai2-simulation
       ${CORE_LIB_DIR}/libsai2-simulation-core.a 
       ${CHAI3D_LIBRARIES}
       ${SAI2-MODEL_LIBRARIES}
+      ${SAI2-COMMON_LIBRARIES}
 )
 set (SAI2-SIMULATION_DEFINITIONS ${PROJECT_DEFINITIONS})
 

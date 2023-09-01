@@ -547,7 +547,7 @@ Sai2Simulation::getContactList(const ::std::string& robot_name,
 
 void Sai2Simulation::addSimulatedForceSensor(
 	const std::string& robot_name, const std::string& link_name,
-	const Eigen::Affine3d transform_in_link) {
+	const Eigen::Affine3d transform_in_link, const double filter_cutoff_frequency) {
 	if (!existsInSimulatedWorld(robot_name, link_name)) {
 		std::cout << "\n\nWARNING: trying to add a force sensor to an "
 					 "unexisting robot or link in "
@@ -563,7 +563,8 @@ void Sai2Simulation::addSimulatedForceSensor(
 		return;
 	}
 	_force_sensors.push_back(std::make_shared<ForceSensorSim>(
-		robot_name, link_name, transform_in_link, _robot_models[robot_name]));
+		robot_name, link_name, transform_in_link, _robot_models[robot_name],
+		filter_cutoff_frequency * _timestep));
 }
 
 const Eigen::Vector3d Sai2Simulation::getSensedForce(

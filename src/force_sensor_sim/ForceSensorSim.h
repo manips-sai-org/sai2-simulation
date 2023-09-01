@@ -4,6 +4,7 @@
 #define FORCE_SENSOR_SIM_H
 
 #include <Sai2Model.h>
+#include <filters/ButterworthFilter.h>
 #include <Eigen/Dense>
 #include <string>
 #include <vector>
@@ -25,7 +26,8 @@ public:
 		const std::string& robot_name,
 		const std::string& link_name,
 		const Eigen::Affine3d& transform_in_link,
-		std::shared_ptr<Sai2Model::Sai2Model> model);
+		std::shared_ptr<Sai2Model::Sai2Model> model,
+		const double _filter_normalized_cutoff_freq = 0.0);
 
 	//dtor
 	~ForceSensorSim();
@@ -51,6 +53,9 @@ public:
 	// Discretly remove spikes from the force data
 	void enableSpikeRemoval(const double force_threshold);
 
+	// Enable filtering of the force and moment data
+	void enableFilter(const double normalized_cutoff_freq);
+
 private:
 	// handle to model interface
 	std::shared_ptr<Sai2Model::Sai2Model> _robot;
@@ -64,6 +69,11 @@ private:
 	double _force_threshold;
 	Eigen::Vector3d _previous_force_world_frame;
 	Eigen::Vector3d _previous_moment_world_frame;
+
+	// filter for force and moment
+	bool _use_filter;
+	std::unique_ptr<Sai2Common::ButterworthFilter> _filter_force;
+	std::unique_ptr<Sai2Common::ButterworthFilter> _filter_moment;
 
 };
 

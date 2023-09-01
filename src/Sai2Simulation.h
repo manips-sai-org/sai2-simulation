@@ -195,7 +195,8 @@ public:
 
 	void addSimulatedForceSensor(
 		const std::string& robot_name, const std::string& link_name,
-		const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity());
+		const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity(),
+		const double filter_cutoff_frequency = 0.0);
 
 	const Eigen::Vector3d getSensedForce(const std::string& robot_name,
 								   const std::string& link_name,

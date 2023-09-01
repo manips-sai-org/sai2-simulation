@@ -30,7 +30,9 @@ int main() {
 	Eigen::Affine3d T_link_sensor = Eigen::Affine3d::Identity();
 	T_link_sensor.translate(Eigen::Vector3d(0.0, 0.0, 0.0));
 	T_link_sensor.rotate(Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
-	sim->addSimulatedForceSensor(robot_name, link_name, T_link_sensor);
+	double sensor_filter_cutoff_freq = 30.0;
+	sim->addSimulatedForceSensor(robot_name, link_name, T_link_sensor,
+								 sensor_filter_cutoff_freq);
 
 	// add sensor display in the graphics
 	for (auto sensor_data : sim->getAllForceSensorData()) {

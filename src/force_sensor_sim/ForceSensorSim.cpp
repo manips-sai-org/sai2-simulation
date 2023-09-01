@@ -5,12 +5,20 @@ namespace Sai2Simulation {
 ForceSensorSim::ForceSensorSim(const std::string& robot_name,
 							   const std::string& link_name,
 							   const Eigen::Affine3d& transform_in_link,
-							   std::shared_ptr<Sai2Model::Sai2Model> robot)
+							   std::shared_ptr<Sai2Model::Sai2Model> robot,
+							   const double _filter_normalized_cutoff_freq)
 	: _robot(robot) {
 	_data = Sai2Model::ForceSensorData();
 	_data.robot_name = robot_name;
 	_data.link_name = link_name;
 	_data.transform_in_link = transform_in_link;
+
+	_use_filter = false;
+
+	if(_filter_normalized_cutoff_freq > 0.0)
+	{
+		enableFilter(_filter_normalized_cutoff_freq);
+	}
 
 	_remove_spike = false;
 	_first_iteration = true;
@@ -59,6 +67,13 @@ void ForceSensorSim::update(const std::shared_ptr<cDynamicWorld> dyn_world) {
 		}
 	}
 
+	// filter signals
+	if (_use_filter) {
+		_data.force_world_frame = _filter_force->update(_data.force_world_frame);
+		_data.moment_world_frame =
+			_filter_moment->update(_data.moment_world_frame);
+	}
+
 	_previous_force_world_frame = _data.force_world_frame;
 	_previous_moment_world_frame = _data.moment_world_frame;
 
@@ -74,6 +89,14 @@ void ForceSensorSim::update(const std::shared_ptr<cDynamicWorld> dyn_world) {
 void ForceSensorSim::enableSpikeRemoval(const double force_threshold) {
 	_remove_spike = true;
 	_force_threshold = force_threshold;
+}
+
+void ForceSensorSim::enableFilter(const double normalized_cutoff_freq) {
+	_use_filter = true;
+	_filter_force.reset(
+		new Sai2Common::ButterworthFilter(normalized_cutoff_freq));
+	_filter_moment.reset(
+		new Sai2Common::ButterworthFilter(normalized_cutoff_freq));
 }
 
 }  // namespace Sai2Simulation

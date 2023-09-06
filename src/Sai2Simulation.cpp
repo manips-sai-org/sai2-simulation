@@ -567,14 +567,14 @@ void Sai2Simulation::addSimulatedForceSensor(
 		filter_cutoff_frequency * _timestep));
 }
 
-const Eigen::Vector3d Sai2Simulation::getSensedForce(
+Eigen::Vector3d Sai2Simulation::getSensedForce(
 	const std::string& robot_name, const std::string& link_name,
 	const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
 	if (sensor_index == -1) {
 		std::cout << "WARNING: no force sensor registered on robot ["
 				  << robot_name << "] and link [" << link_name
-				  << "]. Returnong Zero forces" << std::endl;
+				  << "]. Returning Zero forces" << std::endl;
 		return Eigen::Vector3d::Zero();
 	}
 	if (in_sensor_frame) {
@@ -583,14 +583,14 @@ const Eigen::Vector3d Sai2Simulation::getSensedForce(
 	return _force_sensors.at(sensor_index)->getForceWorldFrame();
 }
 
-const Eigen::Vector3d Sai2Simulation::getSensedMoment(
+Eigen::Vector3d Sai2Simulation::getSensedMoment(
 	const std::string& robot_name, const std::string& link_name,
 	const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
 	if (sensor_index == -1) {
 		std::cout << "WARNING: no force sensor registered on robot ["
 				  << robot_name << "] and link [" << link_name
-				  << "]. Returnong Zero forces" << std::endl;
+				  << "]. Returning Zero moments" << std::endl;
 		return Eigen::Vector3d::Zero();
 	}
 	if (in_sensor_frame) {

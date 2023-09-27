@@ -25,6 +25,7 @@ namespace Sai2Simulation {
 Sai2Simulation::Sai2Simulation(const std::string& path_to_world_file,
 							   bool verbose) {
 	resetWorld(path_to_world_file, verbose);
+	_timestep = 0.001;
 }
 
 void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
@@ -52,6 +53,8 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	for (auto robot : _world->m_dynamicObjects) {
 		robot->enableDynamics(true);
 	}
+
+	setCollisionRestitution(0);
 
 	// create robot models
 	for (const auto& pair : _robot_filenames) {
@@ -100,6 +103,11 @@ void Sai2Simulation::setTimestep(const double dt) {
 	if (dt <= 0) {
 		throw std::invalid_argument(
 			"simulation timestep cannot be 0 or negative");
+	}
+	double prev_timestep = _timestep;
+	for(auto sensor : _force_sensors) {
+		double cutoff = sensor->getNormalizedCutoffFreq()/prev_timestep;
+		sensor->enableFilter(cutoff*dt);
 	}
 	_timestep = dt;
 }
@@ -567,14 +575,14 @@ void Sai2Simulation::addSimulatedForceSensor(
 		filter_cutoff_frequency * _timestep));
 }
 
-const Eigen::Vector3d Sai2Simulation::getSensedForce(
+Eigen::Vector3d Sai2Simulation::getSensedForce(
 	const std::string& robot_name, const std::string& link_name,
 	const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
 	if (sensor_index == -1) {
 		std::cout << "WARNING: no force sensor registered on robot ["
 				  << robot_name << "] and link [" << link_name
-				  << "]. Returnong Zero forces" << std::endl;
+				  << "]. Returning Zero forces" << std::endl;
 		return Eigen::Vector3d::Zero();
 	}
 	if (in_sensor_frame) {
@@ -583,14 +591,14 @@ const Eigen::Vector3d Sai2Simulation::getSensedForce(
 	return _force_sensors.at(sensor_index)->getForceWorldFrame();
 }
 
-const Eigen::Vector3d Sai2Simulation::getSensedMoment(
+Eigen::Vector3d Sai2Simulation::getSensedMoment(
 	const std::string& robot_name, const std::string& link_name,
 	const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
 	if (sensor_index == -1) {
 		std::cout << "WARNING: no force sensor registered on robot ["
 				  << robot_name << "] and link [" << link_name
-				  << "]. Returnong Zero forces" << std::endl;
+				  << "]. Returning Zero moments" << std::endl;
 		return Eigen::Vector3d::Zero();
 	}
 	if (in_sensor_frame) {

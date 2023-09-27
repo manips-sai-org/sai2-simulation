@@ -35,17 +35,17 @@ public:
 	// update force information
 	void update(const std::shared_ptr<cDynamicWorld> dyn_world);
 
-	// get force applied to sensor body in world coordinates
-	Eigen::Vector3d getForceWorldFrame() const {return _data.force_world_frame;};
+	// get force applied by sensor body to the environment in world coordinates
+	const Eigen::Vector3d& getForceWorldFrame() const {return _data.force_world_frame;};
 
-	// get force applied to sensor body in local sensor frame
-	Eigen::Vector3d getForceLocalFrame() const {return _data.force_local_frame;};
+	// get force applied by sensor body to the environment in local sensor frame
+	const Eigen::Vector3d& getForceLocalFrame() const {return _data.force_local_frame;};
 
-	// get moment applied to sensor body in world coordinates
-	Eigen::Vector3d getMomentWorldFrame() const {return _data.moment_world_frame;};
+	// get moment applied by sensor body to the environment in world coordinates
+	const Eigen::Vector3d& getMomentWorldFrame() const {return _data.moment_world_frame;};
 
-	// get moment applied to sensor body in local sensor frame
-	Eigen::Vector3d getMomentLocalFrame() const {return _data.moment_local_frame;};
+	// get moment applied by sensor body to the environment in local sensor frame
+	const Eigen::Vector3d& getMomentLocalFrame() const {return _data.moment_local_frame;};
 
 	// get full data
 	Sai2Model::ForceSensorData getData() const {return _data;}
@@ -55,6 +55,10 @@ public:
 
 	// Enable filtering of the force and moment data
 	void enableFilter(const double normalized_cutoff_freq);
+
+	double getNormalizedCutoffFreq() const {
+		return _filter_force->getNormalizedCutoffFreq();
+	}
 
 private:
 	// handle to model interface

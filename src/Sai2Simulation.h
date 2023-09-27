@@ -93,7 +93,8 @@ public:
 	 * @param robot_name Name of the robot for which transaction is required.
 	 * @return joint positions for that robot.
 	 */
-	const Eigen::VectorXd getJointPositions(const std::string& robot_name) const;
+	const Eigen::VectorXd getJointPositions(
+		const std::string& robot_name) const;
 
 	/**
 	 * @brief Read back position and orientation of an object.
@@ -129,7 +130,8 @@ public:
 	 * @param robot_name Name of the robot for which transaction is required.
 	 * @return joint velocities for that robot.
 	 */
-	const Eigen::VectorXd getJointVelocities(const std::string& robot_name) const;
+	const Eigen::VectorXd getJointVelocities(
+		const std::string& robot_name) const;
 
 	/**
 	 * @brief Read back linear and angular velocities of an object as a 6d
@@ -137,7 +139,8 @@ public:
 	 * @param object_name Name of the object for which transaction is required.
 	 * @return a 6d vector containing [lin_vel, ang_vel].
 	 */
-	const Eigen::VectorXd getObjectVelocity(const std::string& object_name) const;
+	const Eigen::VectorXd getObjectVelocity(
+		const std::string& object_name) const;
 
 	/**
 	 * @brief Set joint torques as an array. Assumes serial or tree chain robot.
@@ -161,7 +164,8 @@ public:
 	 * @param robot_name Name of the robot for which transaction is required.
 	 * @return joint accelerations for that robot.
 	 */
-	const Eigen::VectorXd getJointAccelerations(const std::string& robot_name) const;
+	const Eigen::VectorXd getJointAccelerations(
+		const std::string& robot_name) const;
 
 	/**
 	 * @brief Integrate the virtual world over the time step (1ms by default or
@@ -190,21 +194,68 @@ public:
 	 * location of the contact point in world coordinates, and the second
 	 * contains the contact force in world coordinates
 	 */
-	const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> getContactList(
-		const ::std::string& robot_name, const std::string& link_name) const;
+	const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+	getContactList(const ::std::string& robot_name,
+				   const std::string& link_name) const;
 
+	/**
+	 * @brief Adds a simulated sorce sensor to a given robot at a given link,
+	 * with possibility to filter the force data with a second order butterworth
+	 * filter. Only one force sensor can be added to a given link
+	 *
+	 * @param robot_name name of the robot to which to add the force sensor
+	 * @param link_name link to which we want to add the sensor
+	 * @param transform_in_link transform from the link frame to the sensor
+	 * frame
+	 * @param filter_cutoff_frequency cutoff frequency of the filter (in Hz). If
+	 * 0, the filter is not enabled
+	 */
 	void addSimulatedForceSensor(
 		const std::string& robot_name, const std::string& link_name,
 		const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity(),
 		const double filter_cutoff_frequency = 0.0);
 
-	const Eigen::Vector3d getSensedForce(const std::string& robot_name,
-								   const std::string& link_name,
-								   const bool in_sensor_frame = true) const;
-	const Eigen::Vector3d getSensedMoment(const std::string& robot_name,
-									const std::string& link_name,
-									const bool in_sensor_frame = true) const;
+	/**
+	 * @brief Get the Sensed Force for a given robot at a given link (only if a
+	 * sensor was added to that link). The force can be expressed in the world
+	 * frame or in the sensor frame (default is sensor frame). This represents
+	 * the force that the robot applies to the environment
+	 *
+	 * @param robot_name the name of the robot that has the sensor
+	 * @param link_name the name of the link that has the sensor
+	 * @param in_sensor_frame if true, the force is expressed in the sensor
+	 * frame, if false, it is in world frame
+	 * @return const Eigen::Vector3d& The force sensed by the simulated force
+	 * sensor
+	 */
+	Eigen::Vector3d getSensedForce(
+		const std::string& robot_name, const std::string& link_name,
+		const bool in_sensor_frame = true) const;
 
+	/**
+	 * @brief Get the Sensed Moment for a given robot at a given link (only if a
+	 * sensor was added to that link). The moment can be expressed in the world
+	 * frame or in the sensor frame (default is sensor frame). This represents
+	 * the moment that the robot applies to the environment
+	 *
+	 * @param robot_name the name of the robot that has the sensor
+	 * @param link_name the name of the link that has the sensor
+	 * @param in_sensor_frame if true, the moment is expressed in the sensor
+	 * frame, if false, it is in world frame
+	 * @return const Eigen::Vector3d& The moment sensed by the simulated force
+	 * sensor
+	 */
+	Eigen::Vector3d getSensedMoment(
+		const std::string& robot_name, const std::string& link_name,
+		const bool in_sensor_frame = true) const;
+
+	/**
+	 * @brief Get the All Force Sensor Data object for all the sensors that have
+	 * been added to the simulation
+	 *
+	 * @return const std::vector<Sai2Model::ForceSensorData> a vector of all the
+	 * most recent force sensor data
+	 */
 	const std::vector<Sai2Model::ForceSensorData> getAllForceSensorData() const;
 
 	/* Sai2-Simulation specific interface */
@@ -252,7 +303,7 @@ public:
 	 * @return     Current value
 	 */
 	const double getCollisionRestitution(const std::string& robot_name,
-								   const std::string& link_name) const;
+										 const std::string& link_name) const;
 
 	/**
 	 * @brief      Set the co-efficient of static friction: for all objects
@@ -295,7 +346,7 @@ public:
 	 * @return     Current value
 	 */
 	const double getCoeffFrictionStatic(const std::string& robot_name,
-								  const std::string& link_name) const;
+										const std::string& link_name) const;
 
 	/**
 	 * @brief      Set the co-efficient of dynamic friction: for all objects
@@ -340,7 +391,7 @@ public:
 	 * @return     Current value
 	 */
 	const double getCoeffFrictionDynamic(const std::string& robot_name,
-								   const std::string& link_name) const;
+										 const std::string& link_name) const;
 
 	/**
 	 * @brief      Get affine transform from the global frame to the base frame
@@ -348,7 +399,8 @@ public:
 	 * @param      robot_name  Robot from which to get the value
 	 * @return     Transform
 	 */
-	const Eigen::Affine3d getRobotBaseTransform(const std::string& robot_name) const;
+	const Eigen::Affine3d getRobotBaseTransform(
+		const std::string& robot_name) const;
 
 	const std::shared_ptr<cDynamicWorld>& getDynamicWorld() const {
 		return _world;
@@ -358,10 +410,10 @@ public:
 
 private:
 	const bool existsInSimulatedWorld(const std::string& robot_or_object_name,
-								const std::string link_name = "") const;
+									  const std::string link_name = "") const;
 
 	const int findSimulatedForceSensor(const std::string& robot_name,
-								 const std::string& link_name) const;
+									   const std::string& link_name) const;
 
 	void setAllJointTorquesInternal();
 
@@ -376,7 +428,7 @@ private:
 
 	bool _is_paused;
 	double _time;
-	double _timestep = 0.001;
+	double _timestep;
 
 	bool _gravity_compensation_enabled;
 

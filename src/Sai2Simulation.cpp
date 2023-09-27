@@ -25,6 +25,7 @@ namespace Sai2Simulation {
 Sai2Simulation::Sai2Simulation(const std::string& path_to_world_file,
 							   bool verbose) {
 	resetWorld(path_to_world_file, verbose);
+	_timestep = 0.001;
 }
 
 void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
@@ -52,6 +53,8 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	for (auto robot : _world->m_dynamicObjects) {
 		robot->enableDynamics(true);
 	}
+
+	setCollisionRestitution(0);
 
 	// create robot models
 	for (const auto& pair : _robot_filenames) {
@@ -100,6 +103,11 @@ void Sai2Simulation::setTimestep(const double dt) {
 	if (dt <= 0) {
 		throw std::invalid_argument(
 			"simulation timestep cannot be 0 or negative");
+	}
+	double prev_timestep = _timestep;
+	for(auto sensor : _force_sensors) {
+		double cutoff = sensor->getNormalizedCutoffFreq()/prev_timestep;
+		sensor->enableFilter(cutoff*dt);
 	}
 	_timestep = dt;
 }

@@ -56,6 +56,10 @@ public:
 	// Enable filtering of the force and moment data
 	void enableFilter(const double normalized_cutoff_freq);
 
+	double getNormalizedCutoffFreq() const {
+		return _filter_force->getNormalizedCutoffFreq();
+	}
+
 private:
 	// handle to model interface
 	std::shared_ptr<Sai2Model::Sai2Model> _robot;

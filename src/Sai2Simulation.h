@@ -428,7 +428,7 @@ private:
 
 	bool _is_paused;
 	double _time;
-	double _timestep = 0.001;
+	double _timestep;
 
 	bool _gravity_compensation_enabled;
 

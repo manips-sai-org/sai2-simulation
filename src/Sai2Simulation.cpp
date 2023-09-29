@@ -80,6 +80,14 @@ const std::vector<std::string> Sai2Simulation::getRobotNames() const {
 	return robot_names;
 }
 
+const std::vector<std::string> Sai2Simulation::getObjectNames() const {
+	std::vector<std::string> object_names;
+	for (const auto& it : _dyn_object_base_pos) {
+		object_names.push_back(it.first);
+	}
+	return object_names;
+}
+
 // get dof
 const unsigned int Sai2Simulation::dof(const std::string& robot_name) const {
 	if (!existsInSimulatedWorld(robot_name)) {

@@ -407,6 +407,7 @@ public:
 	}
 
 	const std::vector<std::string> getRobotNames() const;
+	const std::vector<std::string> getObjectNames() const;
 
 private:
 	const bool existsInSimulatedWorld(const std::string& robot_or_object_name,

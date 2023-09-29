@@ -151,6 +151,15 @@ public:
 						 const Eigen::VectorXd& tau);
 
 	/**
+	 * @brief Set the torques for the given object (xyz force first, xyz torques second)
+	 * 
+	 * @param object_name 
+	 * @param tau 
+	 */
+	void setObjectForceTorque(const std::string& object_name,
+						  const Eigen::Matrix<double, 6, 1>& force_torque);
+
+	/**
 	 * @brief Set joint torque for a single joint
 	 * @param robot_name Name of the robot for which transaction is required.
 	 * @param joint_id Joint number on which to set value.
@@ -410,11 +419,13 @@ public:
 	const std::vector<std::string> getObjectNames() const;
 
 private:
-	const bool existsInSimulatedWorld(const std::string& robot_or_object_name,
+	const bool robotExistsInWorld(const std::string& robot_name,
 									  const std::string link_name = "") const;
 
+	const bool objectExistsInWorld(const std::string& object_name) const;
+
 	const int findSimulatedForceSensor(const std::string& robot_name,
-									   const std::string& link_name) const;
+									   const std::string& link_name = "object_link") const;
 
 	void setAllJointTorquesInternal();
 
@@ -426,6 +437,7 @@ private:
 	std::map<std::string, std::string> _robot_filenames;
 	std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
 	std::map<std::string, Eigen::VectorXd> _applied_robot_torques;
+	std::map<std::string, Eigen::Matrix<double, 6, 1>> _applied_object_torques;
 
 	bool _is_paused;
 	double _time;
@@ -435,8 +447,7 @@ private:
 
 	std::vector<std::shared_ptr<ForceSensorSim>> _force_sensors;
 
-	std::map<std::string, Eigen::Vector3d> _dyn_object_base_pos;
-	std::map<std::string, Eigen::Quaterniond> _dyn_object_base_rot;
+	std::map<std::string, Eigen::Affine3d> _dyn_object_base_pose;
 };
 
 }  // namespace Sai2Simulation

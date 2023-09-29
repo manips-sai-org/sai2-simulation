@@ -22,8 +22,7 @@ namespace Sai2Simulation {
  */
 void URDFToDynamics3dWorld(const std::string& filename,
 							std::shared_ptr<cDynamicWorld> world,
-							std::map<std::string , Eigen::Vector3d>& _dyn_object_base_pos,
-							std::map<std::string , Eigen::Quaterniond>& _dyn_object_base_rot,
+							std::map<std::string , Eigen::Affine3d>& _dyn_object_base_pose,
 							std::map<std::string, std::string>& robot_filenames,
 							bool verbose);
 

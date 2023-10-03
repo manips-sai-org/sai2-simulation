@@ -378,6 +378,10 @@ const Eigen::VectorXd Sai2Simulation::getObjectVelocity(
 		object->m_dynamicJoints[1]->getVel(),
 		object->m_dynamicJoints[2]->getVel();
 	vel_ret.tail(3) = object->m_dynamicJoints[3]->getVelSpherical().eigen();
+	vel_ret.head(3) =
+		_dyn_object_base_pose.at(object_name).rotation() * vel_ret.head(3);
+	vel_ret.tail(3) =
+		_dyn_object_base_pose.at(object_name).rotation() * vel_ret.tail(3);
 	return vel_ret;
 }
 
@@ -407,14 +411,23 @@ void Sai2Simulation::setJointTorque(const std::string& robot_name,
 	_applied_robot_torques.at(robot_name)(joint_id) = tau;
 }
 
-void Sai2Simulation::setObjectForceTorque(
-	const std::string& object_name, const Eigen::Matrix<double, 6, 1>& tau) {
+void Sai2Simulation::setObjectForceTorque(const std::string& object_name,
+										  const Eigen::Vector6d& tau) {
 	if (!objectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
 			"cannot set torques for object [" + object_name +
 			"] that does not exists in simulated world");
 	}
-	_applied_object_torques.at(object_name) = tau;
+	// linear forces are applied in object base frame (before the rotation from
+	// the spherical joint)
+	_applied_object_torques.at(object_name).head<3>() =
+		_dyn_object_base_pose.at(object_name).rotation().transpose() *
+		tau.head<3>();
+	// spherical torques are applied in the object local frame (after rotation
+	// from the spherical joint)
+	Eigen::Affine3d object_pose = getObjectPose(object_name);
+	_applied_object_torques.at(object_name).tail<3>() =
+		object_pose.rotation().transpose() * tau.tail<3>();
 }
 
 void Sai2Simulation::setAllJointTorquesInternal() {
@@ -651,7 +664,6 @@ const int Sai2Simulation::findSimulatedForceSensor(
 
 const bool Sai2Simulation::robotExistsInWorld(
 	const std::string& robot_name, const std::string link_name) const {
-
 	auto it = _robot_models.find(robot_name);
 	if (it == _robot_models.end()) {
 		return false;

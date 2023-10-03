@@ -151,13 +151,14 @@ public:
 						 const Eigen::VectorXd& tau);
 
 	/**
-	 * @brief Set the torques for the given object (xyz force first, xyz torques second)
-	 * 
-	 * @param object_name 
-	 * @param tau 
+	 * @brief Set the force and torque for the given object, expressed in world
+	 * frame (xyz force first, xyz torques second)
+	 *
+	 * @param object_name
+	 * @param tau
 	 */
 	void setObjectForceTorque(const std::string& object_name,
-						  const Eigen::Matrix<double, 6, 1>& force_torque);
+						  const Eigen::Vector6d& force_torque);
 
 	/**
 	 * @brief Set joint torque for a single joint

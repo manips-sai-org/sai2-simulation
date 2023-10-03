@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<world name="demo_world" gravity="0.0 0.0 -9.81">
+<world name="demo_world" gravity="0.0 0.0 0.0">
 
 	<static_object name="Floor">
 		<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
@@ -46,12 +46,12 @@
 	</dynamic_object>
 
 	<dynamic_object name="Box2">
+		<origin xyz="0.4 -0.3 1.0" rpy="0 0 0" />
 		<inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
             <mass value="1" />
             <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
         </inertial>
-		<origin xyz="0.4 -0.3 1.0" rpy="0 0 0" />
 		<collision>
 	        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 	        <geometry>
@@ -70,12 +70,12 @@
 	</dynamic_object>
 
 	<dynamic_object name="Box3">
+		<origin xyz="-0.5 0.0 1.0" rpy="0 0 0" />
 		<inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
             <mass value="1" />
             <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
         </inertial>
-		<origin xyz="-0.5 0.0 1.0" rpy="0 0 0" />
 		<collision>
 	        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 	        <geometry>
@@ -104,9 +104,9 @@
 	</light>
 
 	<camera name="camera_fixed">
-		<position xyz="3.0 0.0 3.0" />
+		<position xyz="3.0 0.0 1.0" />
 		<vertical xyz="0.0 0.0 1.0" />
-		<lookat xyz="0.0 0.0 0.0" />
+		<lookat xyz="0.0 0.0 0.5" />
 	</camera>
 
 </world>

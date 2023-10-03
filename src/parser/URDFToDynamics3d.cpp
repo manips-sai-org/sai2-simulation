@@ -171,7 +171,7 @@ static void loadLinkInertial(cDynamicLink* link, ConstLinkPtr& urdf_link) {
 
 void URDFToDynamics3dWorld(
 	const std::string& filename, std::shared_ptr<cDynamicWorld> world,
-	std::map<std::string, Eigen::Affine3d>& _dyn_object_base_pose,
+	std::map<std::string, Eigen::Affine3d>& dyn_object_base_pose,
 	std::map<std::string, std::string>& robot_filenames, bool verbose) {
 	// load world urdf file
 	ifstream model_file(filename);
@@ -302,8 +302,8 @@ void URDFToDynamics3dWorld(
 		object->m_name = object_ptr->name;
 
 		// record base pose
-		_dyn_object_base_pose[object->m_name] = Eigen::Affine3d(tmp_q);
-		_dyn_object_base_pose.at(object->m_name).translation() = tmp_cvec3.eigen();
+		dyn_object_base_pose[object->m_name] = Eigen::Affine3d(tmp_q);
+		dyn_object_base_pose.at(object->m_name).translation() = tmp_cvec3.eigen();
 
 		// add a link for collision
 		auto default_mat = new cDynamicMaterial();

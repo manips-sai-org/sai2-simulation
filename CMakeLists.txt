@@ -17,7 +17,7 @@ IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 ENDIF()
 
 # set version info
-file (READ ${PROJECT_SOURCE_DIR}/src/version VERSION)
+file (READ ${PROJECT_SOURCE_DIR}/version VERSION)
 STRING(REGEX REPLACE ".*MAJOR=([0-9]+).*" "\\1" MAJOR_VERSION "${VERSION}")
 STRING(REGEX REPLACE ".*MINOR=([0-9]+).*" "\\1" MINOR_VERSION "${VERSION}")
 STRING(REGEX REPLACE ".*RELEASE=([0-9]+).*" "\\1" RELEASE_VERSION "${VERSION}")
@@ -33,8 +33,11 @@ if (USE_SHARED_LIBRARY)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif(USE_SHARED_LIBRARY)
 
-# include system install directory
-include_directories("/usr/local/include")
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+	SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include")
+elseif (${CMAKE_SYSTEM_NAME} MATCHES Darwin)
+	SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -I/opt/homebrew/include")
+endif ()
 
 # find dependencies
 # - chai3d
@@ -189,12 +192,3 @@ write_basic_package_version_file(
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY AnyNewerVersion
 )
-
-
-
-
-
-
-
-
-

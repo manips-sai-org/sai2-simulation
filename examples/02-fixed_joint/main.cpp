@@ -22,6 +22,7 @@ int main(int argc, char** argv) {
 	// load simulation world
 	auto sim =
 		std::make_shared<Sai2Simulation::Sai2Simulation>(world_fname, false);
+	sim->setCollisionRestitution(1.0);
 
 	// load graphics scene
 	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(

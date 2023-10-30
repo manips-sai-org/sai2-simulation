@@ -147,7 +147,7 @@ public:
 
     static void Format(char *buf, int type, char* category, char *msg);
     static void Log(int type, char* category, char* format, ...);
-    static void Printf(char* format, ...);
+    static void Printf(const char* format, ...);
 
     static void AddOutput(cDynLoggerOutput *out);
 

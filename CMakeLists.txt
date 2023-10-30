@@ -23,12 +23,12 @@ STRING(REGEX REPLACE ".*MINOR=([0-9]+).*" "\\1" MINOR_VERSION "${VERSION}")
 STRING(REGEX REPLACE ".*RELEASE=([0-9]+).*" "\\1" RELEASE_VERSION "${VERSION}")
 set(PROJECT_VERSION ${MAJOR_VERSION}.${MINOR_VERSION}.${RELEASE_VERSION})
 
-# compile into dynamic library
-option(USE_SHARED_LIBRARY "USE_SHARED_LIBRARY" OFF)
+# # compile into dynamic library
+# option(USE_SHARED_LIBRARY "USE_SHARED_LIBRARY" OFF)
 
-if (USE_SHARED_LIBRARY)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif(USE_SHARED_LIBRARY)
+# if (USE_SHARED_LIBRARY)
+#   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# endif(USE_SHARED_LIBRARY)
 
 # include system install directory
 include_directories("/usr/local/include")
@@ -71,7 +71,7 @@ elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
 
 # Mac OS X global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Darwin)
-  add_definitions (-DMACOSX)
+  add_definitions (-DMACOSX -DGL_SILENCE_DEPRECATION)
   set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC -I/opt/homebrew/include")
   set (CORE_LIB_OS_DIR "${PROJECT_SOURCE_DIR}/lib/macOS")
 endif ()
@@ -83,7 +83,8 @@ endif ()
 
 # header search path
 include_directories (${PROJECT_SOURCE_DIR}/src)
-include_directories (${PROJECT_SOURCE_DIR}/external/qhull/src)
+include_directories (${PROJECT_SOURCE_DIR}/src/include_core)
+# include_directories (${PROJECT_SOURCE_DIR}/external/qhull/src)
 
 # static exposed API source files
 file (GLOB_RECURSE source_chai3d ${PROJECT_SOURCE_DIR}/src/chai3d/*.cpp)
@@ -97,14 +98,14 @@ set (source_sai2_simulation
 )
 
 # static library external dependencies source files
-file (GLOB_RECURSE source_qhull ${PROJECT_SOURCE_DIR}/external/qhull/src/*.c)
+# file (GLOB_RECURSE source_qhull ${PROJECT_SOURCE_DIR}/external/qhull/src/*.c)
 
 # build flags
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
   EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCH)
   set (PROJECT_DEFINITIONS "${PROJECT_DEFINITIONS} -DBUILD64")
   if (${ARCH} MATCHES arm64)
-  set (PROJECT_DEFINITIONS "${PROJECT_DEFINITIONS} -DMACARM64")
+  set (PROJECT_DEFINITIONS "${PROJECT_DEFINITIONS} -DARM64")
     set (CORE_LIB_DIR "${CORE_LIB_OS_DIR}/arm64")
   else()
     set (CORE_LIB_DIR "${CORE_LIB_OS_DIR}/x86_64")
@@ -121,7 +122,8 @@ endif()
 add_definitions (${PROJECT_DEFINITIONS})
 
 # static library
-add_library (sai2-simulation STATIC ${source_sai2_simulation} ${source_qhull})
+# add_library (sai2-simulation STATIC ${source_sai2_simulation} ${source_qhull})
+add_library (sai2-simulation STATIC ${source_sai2_simulation})
 
 # library exports
 set (SAI2-SIMULATION_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)

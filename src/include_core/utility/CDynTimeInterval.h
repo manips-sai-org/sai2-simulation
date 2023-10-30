@@ -19,7 +19,7 @@
 #include <sys/time.h>
 //const double M_SPEED=1e6;
 const double M_SPEED=1682.1335844e6;
-#ifndef MACARM64
+#ifndef ARM64
 extern __inline__ unsigned long long int rdtsc()
    {
      unsigned long long int x;
@@ -104,7 +104,7 @@ private:
 #if !defined(WIN32) & !defined(WIN64)
 inline long long cDynTimeInterval::Get() const
 {
-#ifndef MACARM64
+#ifndef ARM64
      return(rdtsc());
 #else
     struct timeval tv;

@@ -64,7 +64,7 @@ include (${PROJECT_SOURCE_DIR}/CMakeOptions.txt OPTIONAL)
 
 # Windows global build options
 if (CMAKE_SYSTEM_NAME MATCHES Windows)
-message( FATAL_ERROR "Windows system detected. Currently unsupported." )
+  message( FATAL_ERROR "Windows system detected. Currently unsupported." )
 
 set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
 # Linux global build options

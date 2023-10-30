@@ -23,9 +23,6 @@ STRING(REGEX REPLACE ".*MINOR=([0-9]+).*" "\\1" MINOR_VERSION "${VERSION}")
 STRING(REGEX REPLACE ".*RELEASE=([0-9]+).*" "\\1" RELEASE_VERSION "${VERSION}")
 set(PROJECT_VERSION ${MAJOR_VERSION}.${MINOR_VERSION}.${RELEASE_VERSION})
 
-# # include system install directory
-# include_directories("/usr/local/include")
-
 # find dependencies
 # - chai3d
 set(OpenGL_GL_PREFERENCE "GLVND")

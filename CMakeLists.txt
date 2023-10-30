@@ -34,6 +34,9 @@ endif(USE_SHARED_LIBRARY)
 include_directories("/usr/local/include")
 
 # find dependencies
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 # - chai3d
 set(OpenGL_GL_PREFERENCE "GLVND")
 find_package (CHAI3D REQUIRED)
@@ -63,16 +66,16 @@ include (${PROJECT_SOURCE_DIR}/CMakeOptions.txt OPTIONAL)
 if (CMAKE_SYSTEM_NAME MATCHES Windows)
   message( FATAL_ERROR "Windows system detected. Currently unsupported." )
 
+set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
 # Linux global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
   add_definitions (-DLINUX)
-  set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
   set (CORE_LIB_OS_DIR "${PROJECT_SOURCE_DIR}/lib/linux")
 
 # Mac OS X global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Darwin)
   add_definitions (-DMACOSX)
-  set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC -I/opt/homebrew/include")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
   set (CORE_LIB_OS_DIR "${PROJECT_SOURCE_DIR}/lib/macOS")
 endif ()
 

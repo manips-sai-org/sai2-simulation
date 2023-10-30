@@ -34,6 +34,9 @@ endif(USE_SHARED_LIBRARY)
 include_directories("/usr/local/include")
 
 # find dependencies
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 # - chai3d
 set(OpenGL_GL_PREFERENCE "GLVND")
 find_package (CHAI3D REQUIRED)

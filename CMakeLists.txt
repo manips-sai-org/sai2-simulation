@@ -1,6 +1,6 @@
 # License pending
 # Original author: seb
-# Subsequent authors: Shameek Ganguly
+# Subsequent authors: Shameek Ganguly, Mikael Jorda
 
 #
 # project configuration
@@ -23,15 +23,8 @@ STRING(REGEX REPLACE ".*MINOR=([0-9]+).*" "\\1" MINOR_VERSION "${VERSION}")
 STRING(REGEX REPLACE ".*RELEASE=([0-9]+).*" "\\1" RELEASE_VERSION "${VERSION}")
 set(PROJECT_VERSION ${MAJOR_VERSION}.${MINOR_VERSION}.${RELEASE_VERSION})
 
-# # compile into dynamic library
-# option(USE_SHARED_LIBRARY "USE_SHARED_LIBRARY" OFF)
-
-# if (USE_SHARED_LIBRARY)
-#   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-# endif(USE_SHARED_LIBRARY)
-
-# include system install directory
-include_directories("/usr/local/include")
+# # include system install directory
+# include_directories("/usr/local/include")
 
 # find dependencies
 # - chai3d
@@ -83,8 +76,7 @@ endif ()
 
 # header search path
 include_directories (${PROJECT_SOURCE_DIR}/src)
-include_directories (${PROJECT_SOURCE_DIR}/src/include_core)
-# include_directories (${PROJECT_SOURCE_DIR}/external/qhull/src)
+include_directories (${PROJECT_SOURCE_DIR}/src/headers_core)
 
 # static exposed API source files
 file (GLOB_RECURSE source_chai3d ${PROJECT_SOURCE_DIR}/src/chai3d/*.cpp)
@@ -96,9 +88,6 @@ set (source_sai2_simulation
   ${source_parser}
   ${source_force_sensor}
 )
-
-# static library external dependencies source files
-# file (GLOB_RECURSE source_qhull ${PROJECT_SOURCE_DIR}/external/qhull/src/*.c)
 
 # build flags
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -122,7 +111,6 @@ endif()
 add_definitions (${PROJECT_DEFINITIONS})
 
 # static library
-# add_library (sai2-simulation STATIC ${source_sai2_simulation} ${source_qhull})
 add_library (sai2-simulation STATIC ${source_sai2_simulation})
 
 # library exports

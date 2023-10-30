@@ -60,13 +60,11 @@ if (CMAKE_SYSTEM_NAME MATCHES Windows)
 # Linux global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
   add_definitions (-DLINUX)
-  # set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
   set (CORE_LIB_OS_DIR "${PROJECT_SOURCE_DIR}/lib/linux")
 
 # Mac OS X global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Darwin)
   add_definitions (-DMACOSX -DGL_SILENCE_DEPRECATION)
-  # set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC -I/opt/homebrew/include")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
   set (CORE_LIB_OS_DIR "${PROJECT_SOURCE_DIR}/lib/macOS")
 endif ()
@@ -116,7 +114,7 @@ add_definitions (${PROJECT_DEFINITIONS})
 add_library (sai2-simulation STATIC ${source_sai2_simulation})
 
 # library exports
-set (SAI2-SIMULATION_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
+set (SAI2-SIMULATION_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/headers_core)
 set (SAI2-SIMULATION_LIBRARIES sai2-simulation 
       ${CORE_LIB_DIR}/libsai2-simulation-core.a 
 )

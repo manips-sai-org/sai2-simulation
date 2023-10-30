@@ -31,7 +31,7 @@ class cDynString;
 //---------------------------------------------------------------------------
 extern void cDynIntegrateCallback(cDynTimeEvent* event, void *arg);
 extern void cDynObjectNameCallback(char* (*f)(cDynObject* obj, void* arg));
-extern char *cDynObjectName(cDynObject* obj);
+extern const char *cDynObjectName(cDynObject* obj);
 //---------------------------------------------------------------------------
 
 class cDynWorld

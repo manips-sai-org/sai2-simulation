@@ -1,6 +1,6 @@
 # License pending
 # Original author: seb
-# Subsequent authors: Shameek Ganguly
+# Subsequent authors: Shameek Ganguly, Mikael Jorda
 
 #
 # project configuration
@@ -22,16 +22,6 @@ STRING(REGEX REPLACE ".*MAJOR=([0-9]+).*" "\\1" MAJOR_VERSION "${VERSION}")
 STRING(REGEX REPLACE ".*MINOR=([0-9]+).*" "\\1" MINOR_VERSION "${VERSION}")
 STRING(REGEX REPLACE ".*RELEASE=([0-9]+).*" "\\1" RELEASE_VERSION "${VERSION}")
 set(PROJECT_VERSION ${MAJOR_VERSION}.${MINOR_VERSION}.${RELEASE_VERSION})
-
-# compile into dynamic library
-option(USE_SHARED_LIBRARY "USE_SHARED_LIBRARY" OFF)
-
-if (USE_SHARED_LIBRARY)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif(USE_SHARED_LIBRARY)
-
-# include system install directory
-include_directories("/usr/local/include")
 
 # find dependencies
 find_package(Eigen3 REQUIRED)
@@ -62,20 +52,22 @@ include (${PROJECT_SOURCE_DIR}/CMakeOptions.txt OPTIONAL)
 # optional configuration (configured based on CMakeOptions.txt)
 # -
 
+set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
 # Windows global build options
 if (CMAKE_SYSTEM_NAME MATCHES Windows)
   message( FATAL_ERROR "Windows system detected. Currently unsupported." )
 
-set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
 # Linux global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
   add_definitions (-DLINUX)
+  # set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
   set (CORE_LIB_OS_DIR "${PROJECT_SOURCE_DIR}/lib/linux")
 
 # Mac OS X global build options
 elseif (CMAKE_SYSTEM_NAME MATCHES Darwin)
-  add_definitions (-DMACOSX)
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
+  add_definitions (-DMACOSX -DGL_SILENCE_DEPRECATION)
+  # set (CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC -I/opt/homebrew/include")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
   set (CORE_LIB_OS_DIR "${PROJECT_SOURCE_DIR}/lib/macOS")
 endif ()
 
@@ -86,7 +78,7 @@ endif ()
 
 # header search path
 include_directories (${PROJECT_SOURCE_DIR}/src)
-include_directories (${PROJECT_SOURCE_DIR}/external/qhull/src)
+include_directories (${PROJECT_SOURCE_DIR}/src/headers_core)
 
 # static exposed API source files
 file (GLOB_RECURSE source_chai3d ${PROJECT_SOURCE_DIR}/src/chai3d/*.cpp)
@@ -99,15 +91,12 @@ set (source_sai2_simulation
   ${source_force_sensor}
 )
 
-# static library external dependencies source files
-file (GLOB_RECURSE source_qhull ${PROJECT_SOURCE_DIR}/external/qhull/src/*.c)
-
 # build flags
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
   EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCH)
   set (PROJECT_DEFINITIONS "${PROJECT_DEFINITIONS} -DBUILD64")
   if (${ARCH} MATCHES arm64)
-  set (PROJECT_DEFINITIONS "${PROJECT_DEFINITIONS} -DMACARM64")
+  set (PROJECT_DEFINITIONS "${PROJECT_DEFINITIONS} -DARM64")
     set (CORE_LIB_DIR "${CORE_LIB_OS_DIR}/arm64")
   else()
     set (CORE_LIB_DIR "${CORE_LIB_OS_DIR}/x86_64")
@@ -124,7 +113,7 @@ endif()
 add_definitions (${PROJECT_DEFINITIONS})
 
 # static library
-add_library (sai2-simulation STATIC ${source_sai2_simulation} ${source_qhull})
+add_library (sai2-simulation STATIC ${source_sai2_simulation})
 
 # library exports
 set (SAI2-SIMULATION_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)

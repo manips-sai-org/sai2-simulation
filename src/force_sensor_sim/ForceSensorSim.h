@@ -50,9 +50,6 @@ public:
 	// get full data
 	Sai2Model::ForceSensorData getData() const {return _data;}
 
-	// Discretly remove spikes from the force data
-	void enableSpikeRemoval(const double force_threshold);
-
 	// Enable filtering of the force and moment data
 	void enableFilter(const double normalized_cutoff_freq);
 
@@ -66,13 +63,6 @@ private:
 
 	// last updated data
 	Sai2Model::ForceSensorData _data;
-
-	//spike removal
-	bool _remove_spike;
-	bool _first_iteration;
-	double _force_threshold;
-	Eigen::Vector3d _previous_force_world_frame;
-	Eigen::Vector3d _previous_moment_world_frame;
 
 	// filter for force and moment
 	bool _use_filter;

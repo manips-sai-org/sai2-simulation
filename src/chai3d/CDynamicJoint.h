@@ -113,7 +113,7 @@ public:
     int getJointAxis() { return(m_jointAxis); }
 
     //! Set minimum joint limit.
-    void setJointLimits(double a_jointLimitMin, double a_jointLimitMax, double a_error = 0.05);
+    void setJointLimits(double a_jointLimitMin, double a_jointLimitMax, double a_error = 1e-6);
 
     //! Remove joint limits
     void removeJointLimits();

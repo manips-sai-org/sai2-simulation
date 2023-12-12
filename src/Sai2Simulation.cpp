@@ -62,13 +62,15 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 		const auto& robot_file = pair.second;
 		_robot_models[robot_name] =
 			std::make_shared<Sai2Model::Sai2Model>(robot_file, false);
-		_robot_models[robot_name]->setTRobotBase(
+		_robot_models.at(robot_name)->setTRobotBase(
 			getRobotBaseTransform(robot_name));
-		_robot_models[robot_name]->setWorldGravity(
+		_robot_models.at(robot_name)->setWorldGravity(
 			_world->getGravity().eigen());
 		_applied_robot_torques[robot_name] =
 			Eigen::VectorXd::Zero(dof(robot_name));
 		enableJointLimits(robot_name);
+		_robot_models.at(robot_name)->setQ(getJointPositions(robot_name));
+		_robot_models.at(robot_name)->updateModel();
 	}
 	for (const auto& object_name : getObjectNames()) {
 		_applied_object_torques[object_name] = Eigen::VectorXd::Zero(6);

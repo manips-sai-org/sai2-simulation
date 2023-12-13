@@ -70,6 +70,10 @@ public:
 		return _gravity_compensation_enabled;
 	}
 
+	const Vector3d getWorldGravity() const {
+		return _world->getGravity().eigen();
+	}
+
 	/**
 	 * @brief Set joint positions as an array. Assumes serial or tree chain
 	 * robot.

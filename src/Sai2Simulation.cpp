@@ -68,9 +68,8 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 			_world->getGravity().eigen());
 		_applied_robot_torques[robot_name] =
 			Eigen::VectorXd::Zero(dof(robot_name));
+		setJointPositions(robot_name, _robot_models.at(robot_name)->q());
 		enableJointLimits(robot_name);
-		_robot_models.at(robot_name)->setQ(getJointPositions(robot_name));
-		_robot_models.at(robot_name)->updateModel();
 	}
 	for (const auto& object_name : getObjectNames()) {
 		_applied_object_torques[object_name] = Eigen::VectorXd::Zero(6);

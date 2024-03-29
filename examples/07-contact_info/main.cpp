@@ -10,14 +10,16 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file =
+	string(EXAMPLES_FOLDER) + "/07-contact_info/world.urdf";
 const string robot_name = "PPPBot";
-const string link_name = "sensor_link";
 
 unsigned long long simulation_counter = 0;
 Eigen::VectorXd q_robot;
 
 int main() {
+	Sai2Model::URDF_FOLDERS["EXAMPLE_07_FOLDER"] =
+		string(EXAMPLES_FOLDER) + "/07-contact_info";
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load simulation world

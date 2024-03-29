@@ -10,7 +10,8 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file =
+	string(EXAMPLES_FOLDER) + "/05-pause_sim/world.urdf";
 
 unsigned long long loop_counter = 0;
 

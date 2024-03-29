@@ -1,5 +1,4 @@
 <?xml version="1.0" ?>
-<!--simple pbot-->
 
 <robot name="PPPBot">
     <link name="base_link">
@@ -86,7 +85,6 @@
         <child link="sensor_link" />
         <origin xyz="0.000000 0.000000 -0.090000" rpy="0.000000 0.000000 -0.000000" />
     </joint>
-
 
 </robot>
 

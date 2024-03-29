@@ -3,9 +3,7 @@
 <world name="demo_world" gravity="0.0 0.0 -9.81">
 
 	<robot name="RRBot">
-		<!-- model node is required -->
-		<model dir="resources" path="rrbot.urdf" name="RRBot_description" />
-		<!-- origin node is optional -->
+		<model dir="${EXAMPLE_04_FOLDER}" path="double_pendulum_jl_damping.urdf" name="RRBot_description" />
 		<origin xyz="0.0 0.0 2.0" rpy="0 0 0" />
 		<visual showwireframe="off" showframes="on" />
 	</robot>
@@ -25,7 +23,5 @@
 		<lookat xyz="2.6261   0   2.31305" />
 		<vertical xyz="-0.447214  0  0.894427" />
 	</camera>
-
-	<!-- TODO: support stereo specification -->
 
 </world>

@@ -9,8 +9,8 @@
 
 using namespace std;
 
-const string world_fname = "resources/world.urdf";
-const string camera_name = "camera_fixed";
+const string world_fname = string(EXAMPLES_FOLDER) +
+						   "/03-spherical_joint_and_ui_interactions/world.urdf";
 
 bool fSimulationRunning = false;
 
@@ -20,6 +20,8 @@ std::map<std::string, Eigen::VectorXd> ui_torques;
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
 int main(int argc, char** argv) {
+	Sai2Model::URDF_FOLDERS["EXAMPLE_03_FOLDER"] =
+		string(EXAMPLES_FOLDER) + "/03-spherical_joint_and_ui_interactions";
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
@@ -53,7 +55,8 @@ int main(int argc, char** argv) {
 	while (graphics->isWindowOpen()) {
 		// update graphics from latest simulation config
 		for (const auto& robot_name : robot_names) {
-			graphics->updateRobotGraphics(robot_name, sim->getJointPositions(robot_name));
+			graphics->updateRobotGraphics(robot_name,
+										  sim->getJointPositions(robot_name));
 		}
 		graphics->renderGraphicsWorld();
 

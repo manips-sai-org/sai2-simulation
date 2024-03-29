@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file = string(EXAMPLES_FOLDER) + "/09-dynamic_objects/world.urdf";
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;

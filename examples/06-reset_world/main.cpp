@@ -10,8 +10,8 @@
 
 using namespace std;
 
-const string world_file_1 = "resources/world.urdf";
-const string world_file_2 = "resources/world2.urdf";
+const string world_file_1 = string(EXAMPLES_FOLDER) + "/06-reset_world/world1.urdf";
+const string world_file_2 = string(EXAMPLES_FOLDER) + "/06-reset_world/world2.urdf";
 
 unsigned long long simulation_counter = 0;
 

@@ -8,9 +8,9 @@
 
 using namespace std;
 
-const string world_fname = "resources/world.urdf";
+const string world_fname =
+	string(EXAMPLES_FOLDER) + "/01-load_world_and_simulate/world.urdf";
 const string robot_name = "RRBot";
-const string camera_name = "camera_fixed";
 
 bool fSimulationRunning = false;
 
@@ -44,14 +44,15 @@ int main(int argc, char** argv) {
 	// while window is open:
 	while (graphics->isWindowOpen()) {
 		// update graphics from simulation.
-		graphics->updateRobotGraphics(robot_name, sim->getJointPositions(robot_name));
+		graphics->updateRobotGraphics(robot_name,
+									  sim->getJointPositions(robot_name));
 		graphics->renderGraphicsWorld();
 
-		if(counter == 300) {
+		if (counter == 300) {
 			cout << "\nenabling gravity compensation\n" << endl;
 			sim->enableGravityCompensation(true);
 		}
-		if(counter == 500) {
+		if (counter == 500) {
 			cout << "\ndisabling gravity compensation\n" << endl;
 			sim->enableGravityCompensation(false);
 		}

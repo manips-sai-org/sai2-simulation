@@ -11,6 +11,7 @@
 
 #include <urdf/urdfdom/urdf_parser/include/urdf_parser/urdf_parser.h>
 #include <urdf/urdfdom_headers/urdf_model/include/urdf_model/model.h>
+#include "parser/Sai2ModelParserUtils.h"
 
 typedef my_shared_ptr<Sai2Urdfreader::Link> LinkPtr;
 typedef const my_shared_ptr<const Sai2Urdfreader::Link> ConstLinkPtr;
@@ -45,7 +46,8 @@ namespace Sai2Simulation {
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 static void loadLinkCollision(
-	cDynamicLink* link, const my_shared_ptr<Sai2Urdfreader::Collision>& collision_ptr,
+	cDynamicLink* link,
+	const my_shared_ptr<Sai2Urdfreader::Collision>& collision_ptr,
 	const std::string& working_dirname = "./") {
 	auto tmp_mmesh = new cMultiMesh();
 	tmp_mmesh->m_name = std::string("sai_dyn3d_link_mesh");
@@ -53,8 +55,8 @@ static void loadLinkCollision(
 	const auto geom_type = collision_ptr->geometry->type;
 	if (geom_type == Sai2Urdfreader::Geometry::MESH) {
 		// downcast geometry ptr to mesh type
-		const auto mesh_ptr =
-			dynamic_cast<const Sai2Urdfreader::Mesh*>(collision_ptr->geometry.get());
+		const auto mesh_ptr = dynamic_cast<const Sai2Urdfreader::Mesh*>(
+			collision_ptr->geometry.get());
 		assert(mesh_ptr);
 		// load object
 		if (false == cLoadFileOBJ(tmp_mmesh,
@@ -71,8 +73,8 @@ static void loadLinkCollision(
 							mesh_ptr->scale.z);
 	} else if (geom_type == Sai2Urdfreader::Geometry::BOX) {
 		// downcast geometry ptr to box type
-		const auto box_ptr =
-			dynamic_cast<const Sai2Urdfreader::Box*>(collision_ptr->geometry.get());
+		const auto box_ptr = dynamic_cast<const Sai2Urdfreader::Box*>(
+			collision_ptr->geometry.get());
 		assert(box_ptr);
 		// create chai box mesh
 		chai3d::cCreateBox(tmp_mesh, box_ptr->dim.x, box_ptr->dim.y,
@@ -80,16 +82,16 @@ static void loadLinkCollision(
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::SPHERE) {
 		// downcast geometry ptr to sphere type
-		const auto sphere_ptr =
-			dynamic_cast<const Sai2Urdfreader::Sphere*>(collision_ptr->geometry.get());
+		const auto sphere_ptr = dynamic_cast<const Sai2Urdfreader::Sphere*>(
+			collision_ptr->geometry.get());
 		assert(sphere_ptr);
 		// create chai sphere mesh
 		chai3d::cCreateSphere(tmp_mesh, sphere_ptr->radius);
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::CYLINDER) {
 		// downcast geometry ptr to cylinder type
-		const auto cylinder_ptr =
-			dynamic_cast<const Sai2Urdfreader::Cylinder*>(collision_ptr->geometry.get());
+		const auto cylinder_ptr = dynamic_cast<const Sai2Urdfreader::Cylinder*>(
+			collision_ptr->geometry.get());
 		assert(cylinder_ptr);
 		// create chai sphere mesh
 		chai3d::cCreateCylinder(tmp_mesh, cylinder_ptr->length,
@@ -174,9 +176,10 @@ void URDFToDynamics3dWorld(
 	std::map<std::string, Eigen::Affine3d>& dyn_object_base_pose,
 	std::map<std::string, std::string>& robot_filenames, bool verbose) {
 	// load world urdf file
-	ifstream model_file(filename);
+	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
+	ifstream model_file(resolved_filename);
 	if (!model_file) {
-		cerr << "Error opening file '" << filename << "'." << endl;
+		cerr << "Error opening file '" << resolved_filename << "'." << endl;
 		abort();
 	}
 
@@ -226,8 +229,9 @@ void URDFToDynamics3dWorld(
 		robot->setLocalRot(tmp_cmat3);
 
 		// load robot from file
-		URDFToDynamics3dRobot(robot_spec->model_filename, robot, verbose,
-							  robot_spec->model_working_dir);
+		URDFToDynamics3dRobot(
+			robot_spec->model_filename, robot, verbose,
+			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
 		assert(robot->m_name == robot_spec->model_name);
 
 		// overwrite robot name with custom name for this instance
@@ -239,7 +243,8 @@ void URDFToDynamics3dWorld(
 				"Different robots cannot have the same name in the world");
 		}
 		robot_filenames[robot->m_name] =
-			robot_spec->model_working_dir + "/" + robot_spec->model_filename;
+			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir) +
+			"/" + robot_spec->model_filename;
 	}
 
 	// parse static meshes
@@ -303,7 +308,8 @@ void URDFToDynamics3dWorld(
 
 		// record base pose
 		dyn_object_base_pose[object->m_name] = Eigen::Affine3d(tmp_q);
-		dyn_object_base_pose.at(object->m_name).translation() = tmp_cvec3.eigen();
+		dyn_object_base_pose.at(object->m_name).translation() =
+			tmp_cvec3.eigen();
 
 		// add a link for collision
 		auto default_mat = new cDynamicMaterial();
@@ -633,60 +639,16 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 					 << endl;
 				abort();
 				break;
-			case Sai2Urdfreader::Joint::FIXED:  // This is true for ground links
+			case Sai2Urdfreader::Joint::FIXED:	// This is true for ground links
 			default:
 				break;
 		}
 		if (NULL != dyn_joint) {
 			// set joint name
 			dyn_joint->m_name = joint_names[j];
-			// set joint home position
-			dyn_joint->setPos(
-				0.0);  // TODO: does URDF support a joint home position?
-			if (0 !=
-				urdf_joint->calibration)  // Using the calibration field for now
-										  // as joint initial position
-			{
-				if (0 !=
-					urdf_joint->calibration
-						->rising)  // rising for a definition in rad or meters
-				{
-					dyn_joint->setPos(*(urdf_joint->calibration->rising));
-					if (verbose) {
-						if (urdf_joint_type == Sai2Urdfreader::Joint::REVOLUTE) {
-							std::cout << "joint " << dyn_joint->m_name
-									  << " initial position : "
-									  << *(urdf_joint->calibration->rising)
-									  << " radiants" << std::endl;
-						} else if (urdf_joint_type == Sai2Urdfreader::Joint::PRISMATIC) {
-							std::cout << "joint " << dyn_joint->m_name
-									  << " initial position : "
-									  << *(urdf_joint->calibration->rising)
-									  << " meters" << std::endl;
-						}
-					}
-				}
-				if (0 != urdf_joint->calibration
-							 ->falling)	 // falling for revolute joints
-										 // specified in degrees
-				{
-					dyn_joint->setPos(*(urdf_joint->calibration->falling) /
-									  180.0 * M_PI);
-					if (urdf_joint_type == Sai2Urdfreader::Joint::REVOLUTE) {
-						if (verbose) {
-							std::cout << "joint " << dyn_joint->m_name
-									  << " initial position : "
-									  << *(urdf_joint->calibration->falling)
-									  << " degrees" << std::endl;
-						}
-					} else if (urdf_joint_type == Sai2Urdfreader::Joint::PRISMATIC) {
-						throw std::invalid_argument(
-							"need to use rising field to set initial position "
-							"for prismatic joint : " +
-							dyn_joint->m_name);
-					}
-				}
-			}
+			// set joint position to zero
+			dyn_joint->setPos(0.0);
+			// set joint damping
 			if (0 != urdf_joint->dynamics) {
 				dyn_joint->setDamping(urdf_joint->dynamics->damping);
 			}

@@ -11,6 +11,7 @@
 
 #include <urdf/urdfdom/urdf_parser/include/urdf_parser/urdf_parser.h>
 #include <urdf/urdfdom_headers/urdf_model/include/urdf_model/model.h>
+
 #include "parser/Sai2ModelParserUtils.h"
 
 typedef my_shared_ptr<Sai2Urdfreader::Link> LinkPtr;
@@ -58,16 +59,34 @@ static void loadLinkCollision(
 		const auto mesh_ptr = dynamic_cast<const Sai2Urdfreader::Mesh*>(
 			collision_ptr->geometry.get());
 		assert(mesh_ptr);
+
 		// load object
-		if (false == cLoadFileOBJ(tmp_mmesh,
-								  working_dirname + "/" + mesh_ptr->filename)) {
-			if (false == cLoadFile3DS(tmp_mmesh, working_dirname + "/" +
-													 mesh_ptr->filename)) {
-				cerr << "Couldn't load obj/3ds robot link file: "
-					 << working_dirname + "/" + mesh_ptr->filename << endl;
-				abort();
-			}
+		bool file_load_success = false;
+
+		std::string processed_filepath =
+			working_dirname + "/" + mesh_ptr->filename;
+		if (Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename) !=
+			mesh_ptr->filename) {
+			processed_filepath =
+				Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename);
 		}
+
+		if (processed_filepath.substr(processed_filepath.length() - 4) ==
+			".stl") {
+			file_load_success = cLoadFileSTL(tmp_mmesh, processed_filepath);
+		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
+				   ".obj") {
+			file_load_success = cLoadFileOBJ(tmp_mmesh, processed_filepath);
+		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
+				   ".3ds") {
+			file_load_success = cLoadFile3DS(tmp_mmesh, processed_filepath);
+		}
+		if (!file_load_success) {
+			cerr << "Couldn't load obj/3ds/STL robot link file: "
+				 << processed_filepath << endl;
+			abort();
+		}
+
 		// apply scale
 		tmp_mmesh->scaleXYZ(mesh_ptr->scale.x, mesh_ptr->scale.y,
 							mesh_ptr->scale.z);

@@ -3,13 +3,13 @@
 <world name="demo_world" gravity="0.0 0.0 -9.81">
 
 	<robot name="SphericalBot">
-		<model dir="resources" path="spherical_bot.urdf" name="SphericalBot_description" />
+		<model dir="${EXAMPLE_03_FOLDER}" path="spherical_bot.urdf" name="SphericalBot_description" />
 		<origin xyz="0.0 1.0 1.0" rpy="0 0 0" />
 		<visual showwireframe="off" showframes="off" />
 	</robot>
 
 	<robot name="RRRBot">
-		<model dir="resources" path="rrrbot.urdf" name="RRRBot_description" />
+		<model dir="${EXAMPLE_03_FOLDER}" path="rrrbot.urdf" name="RRRBot_description" />
 		<origin xyz="0.0 -1.0 1.0" rpy="0 0 0" />
 		<visual showwireframe="off" showframes="off" />
 	</robot>
@@ -29,7 +29,5 @@
 		<vertical xyz="0.0 0.0 1.0" />
 		<lookat xyz="0.0 0.0 0.0" />
 	</camera>
-
-	<!-- TODO: support stereo specification -->
 
 </world>

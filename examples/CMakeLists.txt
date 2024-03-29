@@ -1,8 +1,4 @@
-# License pending
-# Original author: seb
-# Subsequent authors: Shameek Ganguly
-
-add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/GLUT)
+# add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/GLUT)
 
 # include Sai2-Graphics
 find_package(SAI2-GRAPHICS REQUIRED)
@@ -17,6 +13,9 @@ set (SAI2-SIMULATION_EXAMPLES_LIBRARIES
     ${SAI2-URDF_LIBRARIES}
     ${SAI2-MODEL_LIBRARIES}
 )
+
+set (EXAMPLES_FOLDER ${CMAKE_CURRENT_SOURCE_DIR})
+add_definitions(-DEXAMPLES_FOLDER="${EXAMPLES_FOLDER}")
 
 # add examples
 add_subdirectory(01-load_world_and_simulate)

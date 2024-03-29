@@ -9,7 +9,8 @@
 
 using namespace std;
 
-const string world_fname = "resources/world.urdf";
+const string world_fname =
+	string(EXAMPLES_FOLDER) + "/02-fixed_joint/world.urdf";
 
 bool fSimulationRunning = false;
 
@@ -17,6 +18,8 @@ bool fSimulationRunning = false;
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
 int main(int argc, char** argv) {
+	Sai2Model::URDF_FOLDERS["EXAMPLE_02_FOLDER"] =
+		string(EXAMPLES_FOLDER) + "/02-fixed_joint";
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world

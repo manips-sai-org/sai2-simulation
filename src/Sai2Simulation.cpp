@@ -48,10 +48,9 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	URDFToDynamics3dWorld(path_to_world_file, _world, _dyn_object_base_pose,
 						  _robot_filenames, verbose);
 
-	// enable dynamics for all robots in this world
-	// TODO: consider pushing up to the API?
-	for (auto robot : _world->m_dynamicObjects) {
-		robot->enableDynamics(true);
+	// enable dynamics for all robots and objects in this world
+	for (auto dyn_element : _world->m_dynamicObjects) {
+		dyn_element->enableDynamics(true);
 	}
 
 	setCollisionRestitution(0);
@@ -62,10 +61,10 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 		const auto& robot_file = pair.second;
 		_robot_models[robot_name] =
 			std::make_shared<Sai2Model::Sai2Model>(robot_file, false);
-		_robot_models.at(robot_name)->setTRobotBase(
-			getRobotBaseTransform(robot_name));
-		_robot_models.at(robot_name)->setWorldGravity(
-			_world->getGravity().eigen());
+		_robot_models.at(robot_name)
+			->setTRobotBase(getRobotBaseTransform(robot_name));
+		_robot_models.at(robot_name)
+			->setWorldGravity(_world->getGravity().eigen());
 		_applied_robot_torques[robot_name] =
 			Eigen::VectorXd::Zero(dof(robot_name));
 		setJointPositions(robot_name, _robot_models.at(robot_name)->q());
@@ -386,6 +385,29 @@ const Eigen::VectorXd Sai2Simulation::getObjectVelocity(
 	return vel_ret;
 }
 
+void Sai2Simulation::setObjectVelocity(
+	const std::string& object_name, const Eigen::Vector3d& linear_velocity,
+	const Eigen::Vector3d& angular_velocity) {
+	if (!objectExistsInWorld(object_name)) {
+		throw std::invalid_argument(
+			"cannot set velocities for object [" + object_name +
+			"] that does not exists in simulated world");
+	}
+	Vector3d linear_vel_object_frame =
+		_dyn_object_base_pose.at(object_name).rotation().transpose() *
+		linear_velocity;
+	Vector3d angular_vel_object_frame =
+		_dyn_object_base_pose.at(object_name).rotation().transpose() *
+		angular_velocity;
+	auto object = _world->getBaseNode(object_name);
+	object->m_dynamicJoints[0]->setVel(linear_vel_object_frame(0));
+	object->m_dynamicJoints[1]->setVel(linear_vel_object_frame(1));
+	object->m_dynamicJoints[2]->setVel(linear_vel_object_frame(2));
+	object->m_dynamicJoints[3]->setVelSpherical(chai3d::cVector3d(
+		angular_vel_object_frame(0), angular_vel_object_frame(1),
+		angular_vel_object_frame(2)));
+}
+
 // set joint torques
 void Sai2Simulation::setJointTorques(const std::string& robot_name,
 									 const Eigen::VectorXd& tau) {
@@ -419,13 +441,13 @@ void Sai2Simulation::setObjectForceTorque(const std::string& object_name,
 			"cannot set torques for object [" + object_name +
 			"] that does not exists in simulated world");
 	}
-	// linear forces are applied in object base frame (before the rotation from
-	// the spherical joint)
+	// linear forces are applied in object base frame (before the rotation
+	// from the spherical joint)
 	_applied_object_torques.at(object_name).head<3>() =
 		_dyn_object_base_pose.at(object_name).rotation().transpose() *
 		tau.head<3>();
-	// spherical torques are applied in the object local frame (after rotation
-	// from the spherical joint)
+	// spherical torques are applied in the object local frame (after
+	// rotation from the spherical joint)
 	Eigen::Affine3d object_pose = getObjectPose(object_name);
 	_applied_object_torques.at(object_name).tail<3>() =
 		object_pose.rotation().transpose() * tau.tail<3>();
@@ -684,37 +706,29 @@ const bool Sai2Simulation::objectExistsInWorld(
 	return true;
 }
 
-// set restitution co-efficients: for all objects
-void Sai2Simulation::setCollisionRestitution(double restitution) {
-	// for all dynamic base
+void Sai2Simulation::setDynamicsEnabled(const bool enabled,
+										const string robot_or_object_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
-		// for all links in this base
-		for (cDynamicLink* link : base->m_dynamicLinks) {
-			cDynamicMaterial* mat = link->getDynamicMaterial();
-			mat->setEpsilon(restitution);
+		if (base->m_name == robot_or_object_name) {
+			base->enableDynamics(enabled);
 		}
 	}
 }
 
-// set restitution co-efficients: for a named object
-void Sai2Simulation::setCollisionRestitution(const std::string& object_name,
-											 double restitution) {
-	setCollisionRestitution(object_name, "object_link", restitution);
-}
-
-// set restitution co-efficients: for a named link
-void Sai2Simulation::setCollisionRestitution(const std::string& robot_name,
-											 const std::string& link_name,
-											 double restitution) {
-	if (!robotExistsInWorld(robot_name, link_name)) {
-		throw std::invalid_argument(
-			"cannot set collision restitution to link [" + link_name +
-			"] of [" + robot_name + "] that doesn't exists in simulation");
+void Sai2Simulation::setCollisionRestitution(const double restitution,
+											 const string robot_or_object_name,
+											 const string link_name) {
+	for (cDynamicBase* base : _world->m_dynamicObjects) {
+		if (robot_or_object_name.empty() ||
+			base->m_name == robot_or_object_name) {
+			for (cDynamicLink* link : base->m_dynamicLinks) {
+				if (link_name.empty() || link->m_name == link_name) {
+					cDynamicMaterial* mat = link->getDynamicMaterial();
+					mat->setEpsilon(restitution);
+				}
+			}
+		}
 	}
-	auto robot = _world->getBaseNode(robot_name);
-	auto link = robot->getLink(link_name);
-	cDynamicMaterial* mat = link->getDynamicMaterial();
-	mat->setEpsilon(restitution);
 }
 
 const double Sai2Simulation::getCollisionRestitution(
@@ -725,7 +739,8 @@ const double Sai2Simulation::getCollisionRestitution(
 // get co-efficient of restitution: for a named robot and link
 const double Sai2Simulation::getCollisionRestitution(
 	const std::string& robot_name, const std::string& link_name) const {
-	if (!robotExistsInWorld(robot_name, link_name)) {
+	if (!robotExistsInWorld(robot_name, link_name) &&
+		(!objectExistsInWorld(robot_name) || link_name != "object_link")) {
 		throw std::invalid_argument(
 			"cannot get collision restitution to link [" + link_name +
 			"] of [" + robot_name + "] that doesn't exists in simulation");
@@ -736,36 +751,20 @@ const double Sai2Simulation::getCollisionRestitution(
 	return mat->getEpsilon();
 }
 
-// set co-efficient of static friction: for all objects
-void Sai2Simulation::setCoeffFrictionStatic(double static_friction) {
-	// for all dynamic base
+void Sai2Simulation::setCoeffFrictionStatic(const double static_friction,
+											const string robot_or_object_name,
+											const string link_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
-		// for all links in this base
-		for (cDynamicLink* link : base->m_dynamicLinks) {
-			cDynamicMaterial* mat = link->getDynamicMaterial();
-			mat->setStaticFriction(static_friction);
+		if (robot_or_object_name.empty() ||
+			base->m_name == robot_or_object_name) {
+			for (cDynamicLink* link : base->m_dynamicLinks) {
+				if (link_name.empty() || link->m_name == link_name) {
+					cDynamicMaterial* mat = link->getDynamicMaterial();
+					mat->setStaticFriction(static_friction);
+				}
+			}
 		}
 	}
-}
-
-void Sai2Simulation::setCoeffFrictionStatic(const std::string& object_name,
-											double static_friction) {
-	setCoeffFrictionStatic(object_name, "object_link", static_friction);
-}
-
-// set co-efficient of static friction: for a named robot and link
-void Sai2Simulation::setCoeffFrictionStatic(const std::string& robot_name,
-											const std::string& link_name,
-											double static_friction) {
-	if (!robotExistsInWorld(robot_name, link_name)) {
-		throw std::invalid_argument(
-			"cannot set static coefficient of friction to link [" + link_name +
-			"] of [" + robot_name + "] that doesn't exists in simulation");
-	}
-	auto robot = _world->getBaseNode(robot_name);
-	auto link = robot->getLink(link_name);
-	cDynamicMaterial* mat = link->getDynamicMaterial();
-	mat->setStaticFriction(static_friction);
 }
 
 const double Sai2Simulation::getCoeffFrictionStatic(
@@ -776,7 +775,8 @@ const double Sai2Simulation::getCoeffFrictionStatic(
 // get co-efficient of static friction: for a named robot and link
 const double Sai2Simulation::getCoeffFrictionStatic(
 	const std::string& robot_name, const std::string& link_name) const {
-	if (!robotExistsInWorld(robot_name, link_name)) {
+	if (!robotExistsInWorld(robot_name, link_name) &&
+		(!objectExistsInWorld(robot_name) || link_name != "object_link")) {
 		throw std::invalid_argument(
 			"cannot get static coefficient of friction to link [" + link_name +
 			"] of [" + robot_name + "] that doesn't exists in simulation");
@@ -787,36 +787,20 @@ const double Sai2Simulation::getCoeffFrictionStatic(
 	return mat->getStaticFriction();
 }
 
-// set co-efficient of dynamic friction: for all object
-void Sai2Simulation::setCoeffFrictionDynamic(double dynamic_friction) {
-	// for all dynamic base
+void Sai2Simulation::setCoeffFrictionDynamic(const double dynamic_friction,
+											 const string robot_or_object_name,
+											 const string link_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
-		// for all links in this base
-		for (cDynamicLink* link : base->m_dynamicLinks) {
-			cDynamicMaterial* mat = link->getDynamicMaterial();
-			mat->setDynamicFriction(dynamic_friction);
+		if (robot_or_object_name.empty() ||
+			base->m_name == robot_or_object_name) {
+			for (cDynamicLink* link : base->m_dynamicLinks) {
+				if (link_name.empty() || link->m_name == link_name) {
+					cDynamicMaterial* mat = link->getDynamicMaterial();
+					mat->setDynamicFriction(dynamic_friction);
+				}
+			}
 		}
 	}
-}
-
-void Sai2Simulation::setCoeffFrictionDynamic(const std::string& object_name,
-											 double dynamic_friction) {
-	setCoeffFrictionDynamic(object_name, "object_link", dynamic_friction);
-}
-
-// set co-efficient of dynamic friction: for a named robot and link
-void Sai2Simulation::setCoeffFrictionDynamic(const std::string& robot_name,
-											 const std::string& link_name,
-											 double dynamic_friction) {
-	if (!robotExistsInWorld(robot_name, link_name)) {
-		throw std::invalid_argument(
-			"cannot set dynamic coefficient of friction to link [" + link_name +
-			"] of [" + robot_name + "] that doesn't exists in simulation");
-	}
-	auto robot = _world->getBaseNode(robot_name);
-	auto link = robot->getLink(link_name);
-	cDynamicMaterial* mat = link->getDynamicMaterial();
-	mat->setDynamicFriction(dynamic_friction);
 }
 
 const double Sai2Simulation::getCoeffFrictionDynamic(
@@ -827,7 +811,8 @@ const double Sai2Simulation::getCoeffFrictionDynamic(
 // get co-efficient of dynamic friction: for a named robot and link
 const double Sai2Simulation::getCoeffFrictionDynamic(
 	const std::string& robot_name, const std::string& link_name) const {
-	if (!robotExistsInWorld(robot_name, link_name)) {
+	if (!robotExistsInWorld(robot_name, link_name) &&
+		(!objectExistsInWorld(robot_name) || link_name != "object_link")) {
 		throw std::invalid_argument(
 			"cannot get dynamic coefficient of friction to link [" + link_name +
 			"] of [" + robot_name + "] that doesn't exists in simulation");

@@ -147,8 +147,21 @@ public:
 		const std::string& object_name) const;
 
 	/**
-	 * @brief Set joint torques as an array. Assumes serial or tree chain robot.
-	 * @param robot_name Name of the robot for which transaction is required.
+	 * @brief Set the Object Velocity
+	 *
+	 * @param object_name
+	 * @param linear_velocity
+	 * @param angular_velocity
+	 */
+	void setObjectVelocity(
+		const std::string& object_name, const Eigen::Vector3d& linear_velocity,
+		const Eigen::Vector3d& angular_velocity = Eigen::Vector3d::Zero());
+
+	/**
+	 * @brief Set joint torques as an array. Assumes serial or tree chain
+	 * robot.
+	 * @param robot_name Name of the robot for which transaction is
+	 * required.
 	 * @param tau Desired joint torque values.
 	 */
 	void setJointTorques(const std::string& robot_name,
@@ -162,7 +175,7 @@ public:
 	 * @param tau
 	 */
 	void setObjectForceTorque(const std::string& object_name,
-						  const Eigen::Vector6d& force_torque);
+							  const Eigen::Vector6d& force_torque);
 
 	/**
 	 * @brief Set joint torque for a single joint
@@ -242,9 +255,9 @@ public:
 	 * @return const Eigen::Vector3d& The force sensed by the simulated force
 	 * sensor
 	 */
-	Eigen::Vector3d getSensedForce(
-		const std::string& robot_name, const std::string& link_name,
-		const bool in_sensor_frame = true) const;
+	Eigen::Vector3d getSensedForce(const std::string& robot_name,
+								   const std::string& link_name,
+								   const bool in_sensor_frame = true) const;
 
 	/**
 	 * @brief Get the Sensed Moment for a given robot at a given link (only if a
@@ -259,9 +272,9 @@ public:
 	 * @return const Eigen::Vector3d& The moment sensed by the simulated force
 	 * sensor
 	 */
-	Eigen::Vector3d getSensedMoment(
-		const std::string& robot_name, const std::string& link_name,
-		const bool in_sensor_frame = true) const;
+	Eigen::Vector3d getSensedMoment(const std::string& robot_name,
+									const std::string& link_name,
+									const bool in_sensor_frame = true) const;
 
 	/**
 	 * @brief Get the All Force Sensor Data object for all the sensors that have
@@ -272,34 +285,31 @@ public:
 	 */
 	const std::vector<Sai2Model::ForceSensorData> getAllForceSensorData() const;
 
-	/* Sai2-Simulation specific interface */
+	/**
+	 * @brief Enable or disable the dynamics for a given object or robot
+	 * If dynamics are disabled, the object/robot won't be considered in the
+	 * integration step (so it won't move and won't be considered for
+	 * collisions)
+	 *
+	 * @param enabled bolean to enable or disable the dynamics
+	 * @param robot_or_object_name
+	 */
+	void setDynamicsEnabled(const bool enabled,
+							const string robot_or_object_name);
 
 	/**
-	 * @brief      Set the co-efficient of kinematic restitution: for all
+	 * @brief Set the Collision Restitution for all objects, or a specific
+	 * object, and a specific link
+	 *
+	 * @param restitution the coefficient to set
+	 * @param robot_or_object_name if empty, will apply to all robots and
 	 * objects
-	 * @param      restitution  Value to set
+	 * @param link_name if empty, will apply to all the links of the given
+	 * robot/object
 	 */
-	void setCollisionRestitution(double restitution);
-
-	/**
-	 * @brief      Set the co-efficient of kinematic restitution: for a named
-	 * object
-	 * @param      object_name  Object on which to set the value
-	 * @param      restitution  Value to set
-	 */
-	void setCollisionRestitution(const std::string& object_name,
-								 double restitution);
-
-	/**
-	 * @brief      Set the co-efficient of kinematic restitution: for a named
-	 * link on a named robot
-	 * @param      robot_name  Robot on which to set the value
-	 * @param      link_name  Robot on which to set the value
-	 * @param      restitution  Value to set
-	 */
-	void setCollisionRestitution(const std::string& robot_name,
-								 const std::string& link_name,
-								 double restitution);
+	void setCollisionRestitution(const double restitution,
+								 const string robot_or_object_name = "",
+								 const string link_name = "");
 
 	/**
 	 * @brief      Get the co-efficient of kinematic restitution: for a named
@@ -320,30 +330,18 @@ public:
 										 const std::string& link_name) const;
 
 	/**
-	 * @brief      Set the co-efficient of static friction: for all objects
-	 * @param      restitution  Value to set
+	 * @brief Set the static friction coefficient for all objects, or a specific
+	 * object, and a specific link
+	 *
+	 * @param static_friction the coefficient to set
+	 * @param robot_or_object_name if empty, will apply to all robots and
+	 * objects
+	 * @param link_name if empty, will apply to all the links of the given
+	 * robot/object
 	 */
-	void setCoeffFrictionStatic(double static_friction);  // for all objects
-
-	/**
-	 * @brief      Set the co-efficient of kinematic restitution: for a named
-	 * object
-	 * @param      object_name  Object on which to set the value
-	 * @param      restitution  Value to set
-	 */
-	void setCoeffFrictionStatic(const std::string& object_name,
-								double static_friction);
-
-	/**
-	 * @brief      Set the co-efficient of kinematic restitution: for a named
-	 * link on a named robot
-	 * @param      robot_name  Robot on which to set the value
-	 * @param      link_name  Robot on which to set the value
-	 * @param      restitution  Value to set
-	 */
-	void setCoeffFrictionStatic(const std::string& robot_name,
-								const std::string& link_name,
-								double static_friction);
+	void setCoeffFrictionStatic(const double static_friction,
+								const string robot_or_object_name = "",
+								const string link_name = "");
 
 	/**
 	 * @brief      Get the co-efficient of static friction: for a named object
@@ -363,32 +361,18 @@ public:
 										const std::string& link_name) const;
 
 	/**
-	 * @brief      Set the co-efficient of dynamic friction: for all objects
-	 * @param      restitution  Value to set
-	 */
-	void setCoeffFrictionDynamic(double dynamic_friction);	// for all objects
-
-	/**
-	 * @brief      Set the co-efficient of kinematic restitution: for a named
-	 * object
+	 * @brief Set the dynamic friction coefficient for all objects, or a
+	 * specific object, and a specific link
 	 *
-	 * @param      object_name  Robot on which to set the value
-	 * @param      restitution  Value to set
+	 * @param dynamic_friction the coefficient to set
+	 * @param robot_or_object_name if empty, will apply to all robots and
+	 * objects
+	 * @param link_name if empty, will apply to all the links of the given
+	 * robot/object
 	 */
-	void setCoeffFrictionDynamic(const std::string& object_name,
-								 double dynamic_friction);
-
-	/**
-	 * @brief      Set the co-efficient of kinematic restitution: for a named
-	 * link on a named robot
-	 *
-	 * @param      robot_name  Robot on which to set the value
-	 * @param      link_name  Robot on which to set the value
-	 * @param      restitution  Value to set
-	 */
-	void setCoeffFrictionDynamic(const std::string& robot_name,
-								 const std::string& link_name,
-								 double dynamic_friction);
+	void setCoeffFrictionDynamic(const double dynamic_friction,
+								 const string robot_or_object_name = "",
+								 const string link_name = "");
 
 	/**
 	 * @brief      Get the co-efficient of dynamic friction: for a named object
@@ -423,14 +407,20 @@ public:
 	const std::vector<std::string> getRobotNames() const;
 	const std::vector<std::string> getObjectNames() const;
 
-private:
+	const bool modelExistsInWorld(const std::string& model_name) const
+	{
+		return robotExistsInWorld(model_name) || objectExistsInWorld(model_name);
+	}
+
 	const bool robotExistsInWorld(const std::string& robot_name,
-									  const std::string link_name = "") const;
+								  const std::string link_name = "") const;
 
 	const bool objectExistsInWorld(const std::string& object_name) const;
 
-	const int findSimulatedForceSensor(const std::string& robot_name,
-									   const std::string& link_name = "object_link") const;
+private:
+	const int findSimulatedForceSensor(
+		const std::string& robot_name,
+		const std::string& link_name = "object_link") const;
 
 	void setAllJointTorquesInternal();
 

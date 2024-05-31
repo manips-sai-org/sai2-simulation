@@ -49,7 +49,9 @@ namespace Sai2Simulation {
 static void loadLinkCollision(
 	cDynamicLink* link,
 	const my_shared_ptr<Sai2Urdfreader::Collision>& collision_ptr,
-	const std::string& working_dirname = "./") {
+	const std::string& working_dirname = "./",
+	const Eigen::Matrix3d& joint_axis_alignment_rotation =
+		Eigen::Matrix3d::Identity()) {
 	auto tmp_mmesh = new cMultiMesh();
 	tmp_mmesh->m_name = std::string("sai_dyn3d_link_mesh");
 	auto tmp_mesh = new cMesh();
@@ -114,7 +116,9 @@ static void loadLinkCollision(
 		assert(cylinder_ptr);
 		// create chai sphere mesh
 		chai3d::cCreateCylinder(tmp_mesh, cylinder_ptr->length,
-								cylinder_ptr->radius);
+								cylinder_ptr->radius, 32, 1, 1, true, true,
+								cVector3d(0, 0, -cylinder_ptr->length / 2));
+
 		tmp_mmesh->addMesh(tmp_mesh);
 	}
 
@@ -122,15 +126,18 @@ static void loadLinkCollision(
 	// orientation info
 	auto urdf_q = collision_ptr->origin.rotation;
 	Quaternion<double> tmp_q(urdf_q.w, urdf_q.x, urdf_q.y, urdf_q.z);
-	cMatrix3d tmp_cmat3;
-	tmp_cmat3.copyfrom(tmp_q.toRotationMatrix());
+	Matrix3d mesh_rotation = tmp_q.toRotationMatrix();
+	Eigen::Vector3d mesh_position(collision_ptr->origin.position.x,
+								  collision_ptr->origin.position.y,
+								  collision_ptr->origin.position.z);
+
+	mesh_position = joint_axis_alignment_rotation.transpose() * mesh_position;
+	mesh_rotation = joint_axis_alignment_rotation.transpose() * mesh_rotation;
 
 	//-- New code to combine meshes -- This results in multiple collision meshes
 	// on the same link
-	tmp_mmesh->setLocalPos(cVector3d(collision_ptr->origin.position.x,
-									 collision_ptr->origin.position.y,
-									 collision_ptr->origin.position.z));
-	tmp_mmesh->setLocalRot(tmp_cmat3);
+	tmp_mmesh->setLocalPos(cVector3d(mesh_position));
+	tmp_mmesh->setLocalRot(cMatrix3d(mesh_rotation));
 	link->setCollisionModel(tmp_mmesh);
 	// build collision model (currently, only convex hull and box are
 	// supported!)
@@ -138,7 +145,10 @@ static void loadLinkCollision(
 }
 
 // load inertial properties from urdf link to dynamics3d link
-static void loadLinkInertial(cDynamicLink* link, ConstLinkPtr& urdf_link) {
+static void loadLinkInertial(
+	cDynamicLink* link, ConstLinkPtr& urdf_link,
+	const Eigen::Matrix3d& joint_axis_alignment_rotation =
+		Eigen::Matrix3d::Identity()) {
 	Vector3d link_inertial_rpy;	 // inertial frame rotation in Euler XYZ moving
 								 // angles (Roll, Pitch, Yaw)
 	Vector3d link_inertial_position;  // COM
@@ -183,6 +193,14 @@ static void loadLinkInertial(cDynamicLink* link, ConstLinkPtr& urdf_link) {
 			abort();
 		}
 	}  // else use default
+
+	// transform the inertial properties back to the ones
+	// defined in the actual frame from urdf if needed
+	link_inertial_position =
+		joint_axis_alignment_rotation.transpose() * link_inertial_position;
+	link_inertial_inertia = joint_axis_alignment_rotation.transpose() *
+							link_inertial_inertia *
+							joint_axis_alignment_rotation;
 
 	// add inertial properties to link
 	link->setMassProperties(link_inertial_mass,
@@ -567,6 +585,7 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 		}
 	}
 
+	Matrix3d previous_joint_axis_alignment_rotation = Matrix3d::Identity();
 	// iterate over all joints
 	for (unsigned int j = 0; j < joint_names.size(); j++) {
 		JointPtr urdf_joint = joint_map[joint_names[j]];
@@ -592,64 +611,21 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 		// set name
 		dyn_link->m_name = urdf_child->name;
 
-		// add inertial properties
-		loadLinkInertial(dyn_link, urdf_child);
-
-		// load collision properties
-		for (const auto collision_ptr : urdf_child->collision_array) {
-			loadLinkCollision(dyn_link, collision_ptr, working_dirname);
-		}
-
-		// create the joint
-		// NOTE: dynamics3d currently only supports X, Y and Z aligned axes with
-		// prismatic
-		// TODO: fix this problem
-		// or revolute joints.
+		// find the joint type
 		auto urdf_joint_type = urdf_joint->type;
-		cDynamicJoint* dyn_joint = NULL;
-		int axis_type;
+		int dyn3d_joint_type = -1;	// -1 will represent fixed joints
 		switch (urdf_joint_type) {
 			case Sai2Urdfreader::Joint::REVOLUTE:
-				if (urdf_joint->axis.x > 0.9) {
-					axis_type = DYN_AXIS_X;
-				} else if (urdf_joint->axis.y > 0.9) {
-					axis_type = DYN_AXIS_Y;
-				} else if (urdf_joint->axis.z > 0.9) {
-					axis_type = DYN_AXIS_Z;
-				} else {
-					cerr << "Unsupported joint axis " << joint_names[j] << endl;
-					abort();
-				}
-				dyn_joint = dyn_link->newJoint(DYN_JOINT_REVOLUTE, axis_type);
+				dyn3d_joint_type = DYN_JOINT_REVOLUTE;
 				break;
 			case Sai2Urdfreader::Joint::PRISMATIC:
-				if (urdf_joint->axis.x > 0.9) {
-					axis_type = DYN_AXIS_X;
-				} else if (urdf_joint->axis.y > 0.9) {
-					axis_type = DYN_AXIS_Y;
-				} else if (urdf_joint->axis.z > 0.9) {
-					axis_type = DYN_AXIS_Z;
-				} else {
-					cerr << "Unsupported joint axis " << joint_names[j] << endl;
-					abort();
-				}
-				dyn_joint = dyn_link->newJoint(DYN_JOINT_PRISMATIC, axis_type);
+				dyn3d_joint_type = DYN_JOINT_PRISMATIC;
 				break;
 			case Sai2Urdfreader::Joint::CONTINUOUS:
-				if (urdf_joint->axis.x > 0.9) {
-					axis_type = DYN_AXIS_X;
-				} else if (urdf_joint->axis.y > 0.9) {
-					axis_type = DYN_AXIS_Y;
-				} else if (urdf_joint->axis.z > 0.9) {
-					axis_type = DYN_AXIS_Z;
-				} else {
-					cerr << "Unsupported joint axis " << joint_names[j] << endl;
-					abort();
-				}
-				dyn_joint = dyn_link->newJoint(DYN_JOINT_CONTINUOUS, axis_type);
+				dyn3d_joint_type = DYN_JOINT_CONTINUOUS;
 				break;
 			case Sai2Urdfreader::Joint::SPHERICAL:
-				dyn_joint = dyn_link->newJoint(DYN_JOINT_SPHERICAL);
+				dyn3d_joint_type = DYN_JOINT_SPHERICAL;
 				break;
 			// currently unsupported joint types:
 			case Sai2Urdfreader::Joint::FLOATING:
@@ -662,6 +638,68 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 			default:
 				break;
 		}
+
+		// because dynamics3d only supports joint axis aligned with X, Y or Z
+		// when it is not the case in the urdf file, we will introduce a
+		// rotation to align the joint axis with Z, or X. The inertial and
+		// collision properties will be rotated accordingly.
+		int axis_type = DYN_AXIS_X;
+		Eigen::Matrix3d joint_axis_alignment_rotation =
+			Eigen::Matrix3d::Identity();
+		if (urdf_joint_type == Sai2Urdfreader::Joint::REVOLUTE ||
+			urdf_joint_type == Sai2Urdfreader::Joint::PRISMATIC ||
+			urdf_joint_type == Sai2Urdfreader::Joint::CONTINUOUS) {
+			// determine the joint axis
+			Eigen::Vector3d joint_axis = Eigen::Vector3d(
+				urdf_joint->axis.x, urdf_joint->axis.y, urdf_joint->axis.z);
+			if (joint_axis.norm() < 1e-6) {
+				cerr << "Joint axis is zero for joint " << joint_names[j]
+					 << endl;
+				abort();
+			}
+			joint_axis.normalize();
+			if (joint_axis.dot(Eigen::Vector3d::UnitX()) > 0.99) {
+				axis_type = DYN_AXIS_X;
+			} else if (joint_axis.dot(Eigen::Vector3d::UnitY()) > 0.99) {
+				axis_type = DYN_AXIS_Y;
+			} else if (joint_axis.dot(Eigen::Vector3d::UnitZ()) > 0.99) {
+				axis_type = DYN_AXIS_Z;
+			} else {
+				Eigen::Vector3d required_rotation =
+					Eigen::Vector3d::UnitZ().cross(
+						joint_axis);  // rotate joint axis to Z axis
+				axis_type = DYN_AXIS_Z;
+				if (required_rotation.norm() < 1e-6) {
+					required_rotation = Eigen::Vector3d::UnitX().cross(
+						joint_axis);  // rotate to X axis if it is -Z in the
+									  // urdf file
+					axis_type = DYN_AXIS_X;
+				}
+				double required_angle = asin(required_rotation.norm());
+				Eigen::Vector3d required_rotation_axis =
+					required_rotation.normalized();
+				Eigen::AngleAxisd required_rotation_aa(required_angle,
+													   required_rotation_axis);
+				joint_axis_alignment_rotation =
+					required_rotation_aa.toRotationMatrix();
+			}
+		}
+
+		// add inertial properties
+		loadLinkInertial(dyn_link, urdf_child, joint_axis_alignment_rotation);
+
+		// load collision properties
+		for (const auto collision_ptr : urdf_child->collision_array) {
+			loadLinkCollision(dyn_link, collision_ptr, working_dirname,
+							  joint_axis_alignment_rotation);
+		}
+
+		// create the joint
+		cDynamicJoint* dyn_joint = NULL;
+		if (dyn3d_joint_type != -1) {
+			dyn_joint = dyn_link->newJoint(dyn3d_joint_type, axis_type);
+		}
+
 		if (NULL != dyn_joint) {
 			// set joint name
 			dyn_joint->m_name = joint_names[j];
@@ -675,18 +713,19 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 
 		// compute the joint transformation which acts as the child link
 		// transform with respect to the parent
-		Vector3d joint_rpy;
-		Vector3d joint_translation;
-		urdf_joint->parent_to_joint_origin_transform.rotation.getRPY(
-			joint_rpy[0], joint_rpy[1], joint_rpy[2]);
-		joint_translation
-			<< urdf_joint->parent_to_joint_origin_transform.position.x,
-			urdf_joint->parent_to_joint_origin_transform.position.y,
-			urdf_joint->parent_to_joint_origin_transform.position.z;
+		// Vector3d joint_rpy;
+		auto urdf_pos = urdf_joint->parent_to_joint_origin_transform.position;
+		Vector3d joint_translation(urdf_pos.x, urdf_pos.y, urdf_pos.z);
+		joint_translation = previous_joint_axis_alignment_rotation.transpose() *
+							joint_translation;
 		auto urdf_q = urdf_joint->parent_to_joint_origin_transform.rotation;
 		Quaternion<double> tmp_q(urdf_q.w, urdf_q.x, urdf_q.y, urdf_q.z);
 		cMatrix3d rot_in_parent;
-		rot_in_parent.copyfrom(tmp_q.toRotationMatrix());
+		rot_in_parent.copyfrom(
+			previous_joint_axis_alignment_rotation.transpose() *
+			tmp_q.toRotationMatrix() * joint_axis_alignment_rotation);
+
+		previous_joint_axis_alignment_rotation = joint_axis_alignment_rotation;
 
 		if (verbose) {
 			cout << "+ Adding Body " << endl;

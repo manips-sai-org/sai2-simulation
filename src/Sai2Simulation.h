@@ -101,13 +101,18 @@ public:
 		const std::string& robot_name) const;
 
 	/**
-	 * @brief Read back position and orientation of an object.
+	 * @brief Read back position and orientation of an object (dynamic or static).
 	 * @param object_name Name of the object for which transaction is required.
 	 * @return pose of that object.
 	 */
 	const Eigen::Affine3d getObjectPose(const std::string& object_name) const;
 
-	// set object pose
+	/**
+	 * @brief Set the Object Pose of a dynamic object
+	 * 
+	 * @param object_name 
+	 * @param pose 
+	 */
 	void setObjectPose(const std::string& object_name,
 					   const Eigen::Affine3d& pose) const;
 
@@ -139,7 +144,7 @@ public:
 
 	/**
 	 * @brief Read back linear and angular velocities of an object as a 6d
-	 * vector (linear first, angular second).
+	 * vector (linear first, angular second). Dynamic objects only.
 	 * @param object_name Name of the object for which transaction is required.
 	 * @return a 6d vector containing [lin_vel, ang_vel].
 	 */
@@ -147,7 +152,7 @@ public:
 		const std::string& object_name) const;
 
 	/**
-	 * @brief Set the Object Velocity
+	 * @brief Set the Object Velocity (dynamic objects only)
 	 *
 	 * @param object_name
 	 * @param linear_velocity
@@ -168,7 +173,7 @@ public:
 						 const Eigen::VectorXd& tau);
 
 	/**
-	 * @brief Set the force and torque for the given object, expressed in world
+	 * @brief Set the force and torque for the given object (dynamic object only), expressed in world
 	 * frame (xyz force first, xyz torques second)
 	 *
 	 * @param object_name
@@ -206,11 +211,11 @@ public:
 	void showContactInfo();
 
 	/**
-	 * @brief Shows which links of the given robot are in contact
+	 * @brief Shows which links of the given robot or object are in contact
 	 *
-	 * @param robot_name the robot name
+	 * @param robot_or_object_name the robot or object name
 	 */
-	void showLinksInContact(const std::string robot_name);
+	void showLinksInContact(const std::string robot_or_object_name);
 
 	/**
 	 * @brief      Gets the list of contacts on a given robot at a given link
@@ -226,6 +231,17 @@ public:
 				   const std::string& link_name) const;
 
 	/**
+	 * @brief      Gets the list of contacts on a given object
+	 *
+	 * @param[in]  object_name      The object name
+	 * @return  a vector of pairs, the first element of the pair contains the
+	 * location of the contact point in world coordinates, and the second
+	 * contains the contact force in world coordinates
+	 */
+	const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+	getContactList(const ::std::string& object_name) const;
+
+	/**
 	 * @brief Adds a simulated sorce sensor to a given robot at a given link,
 	 * with possibility to filter the force data with a second order butterworth
 	 * filter. Only one force sensor can be added to a given link
@@ -239,6 +255,10 @@ public:
 	 */
 	void addSimulatedForceSensor(
 		const std::string& robot_name, const std::string& link_name,
+		const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity(),
+		const double filter_cutoff_frequency = 0.0);
+	void addSimulatedForceSensor(
+		const std::string& object_name,
 		const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity(),
 		const double filter_cutoff_frequency = 0.0);
 
@@ -258,6 +278,8 @@ public:
 	Eigen::Vector3d getSensedForce(const std::string& robot_name,
 								   const std::string& link_name,
 								   const bool in_sensor_frame = true) const;
+	Eigen::Vector3d getSensedForce(const std::string& object_name,
+								   const bool in_sensor_frame = true) const;
 
 	/**
 	 * @brief Get the Sensed Moment for a given robot at a given link (only if a
@@ -274,6 +296,8 @@ public:
 	 */
 	Eigen::Vector3d getSensedMoment(const std::string& robot_name,
 									const std::string& link_name,
+									const bool in_sensor_frame = true) const;
+	Eigen::Vector3d getSensedMoment(const std::string& object_name,
 									const bool in_sensor_frame = true) const;
 
 	/**
@@ -296,6 +320,9 @@ public:
 	 */
 	void setDynamicsEnabled(const bool enabled,
 							const string robot_or_object_name);
+
+	void setJointDamping(const double damping, const string robot_or_object_name = "",
+					const string link_name = "");
 
 	/**
 	 * @brief Set the Collision Restitution for all objects, or a specific
@@ -407,20 +434,21 @@ public:
 	const std::vector<std::string> getRobotNames() const;
 	const std::vector<std::string> getObjectNames() const;
 
-	const bool modelExistsInWorld(const std::string& model_name) const
-	{
-		return robotExistsInWorld(model_name) || objectExistsInWorld(model_name);
+	const bool modelExistsInWorld(const std::string& model_name) const {
+		return robotExistsInWorld(model_name) ||
+			   dynamicObjectExistsInWorld(model_name) ||
+			   staticObjectExistsInWorld(model_name);
 	}
 
 	const bool robotExistsInWorld(const std::string& robot_name,
 								  const std::string link_name = "") const;
 
-	const bool objectExistsInWorld(const std::string& object_name) const;
+	const bool dynamicObjectExistsInWorld(const std::string& object_name) const;
+	const bool staticObjectExistsInWorld(const std::string& object_name) const;
 
 private:
-	const int findSimulatedForceSensor(
-		const std::string& robot_name,
-		const std::string& link_name = "object_link") const;
+	const int findSimulatedForceSensor(const std::string& robot_or_object_name,
+									   const std::string& link_name) const;
 
 	void setAllJointTorquesInternal();
 
@@ -442,7 +470,11 @@ private:
 
 	std::vector<std::shared_ptr<ForceSensorSim>> _force_sensors;
 
-	std::map<std::string, Eigen::Affine3d> _dyn_object_base_pose;
+	std::map<std::string, Eigen::Affine3d> _dyn_objects_init_pose;
+	std::map<std::string, Eigen::Affine3d> _static_objects_pose;
+
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _dyn_objects_pose;
+	std::map<std::string, Eigen::VectorXd> _dyn_objects_velocity;
 };
 
 }  // namespace Sai2Simulation

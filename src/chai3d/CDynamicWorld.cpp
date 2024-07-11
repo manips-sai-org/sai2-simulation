@@ -285,10 +285,17 @@ cDynamicWorld::getContactList(const ::std::string& robot_name,
 				// copy chai3d vector to eigen vector
 				for (int l = 0; l < 3; l++) {
 					current_position(l) = contact->m_globalPos(l);
-					// the friction force is inverted for some reason. Need to
-					// substract it to get a coherent result.
-					current_force(l) = contact->m_globalNormalForce(l) -
-									   contact->m_globalFrictionForce(l);
+					// it looks like in dynamics3d, the friction is inverted for
+					// robots, but not for static and dynamic objects
+					// TODO: figure out what is happening and beware of
+					// potential bugs because of this
+					if(link_name == Sai2Simulation::object_link_name) {
+						current_force(l) = contact->m_globalNormalForce(l) +
+											contact->m_globalFrictionForce(l);
+					} else {
+						current_force(l) = contact->m_globalNormalForce(l) -
+											contact->m_globalFrictionForce(l);
+					}
 				}
 				// reverse the sign to get the list of forces applied to the
 				// considered object

@@ -210,7 +210,8 @@ static void loadLinkInertial(
 
 void URDFToDynamics3dWorld(
 	const std::string& filename, std::shared_ptr<cDynamicWorld> world,
-	std::map<std::string, Eigen::Affine3d>& dyn_object_base_pose,
+	std::map<std::string, Eigen::Affine3d>& dyn_objects_pose,
+	std::map<std::string, Eigen::Affine3d>& static_object_pose,
 	std::map<std::string, std::string>& robot_filenames, bool verbose) {
 	// load world urdf file
 	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
@@ -304,13 +305,17 @@ void URDFToDynamics3dWorld(
 		object->setLocalRot(tmp_cmat3);
 		object->m_name = object_ptr->name;
 
+		// record pose
+		static_object_pose[object->m_name] = Eigen::Affine3d(tmp_q);
+		static_object_pose.at(object->m_name).translation() = tmp_cvec3.eigen();
+
 		// add a link for collision
 		auto default_mat = new cDynamicMaterial();
 		// TODO: parse material property from file
 		default_mat->setEpsilon(
 			CDYN_DEFAULT_MAT_RESTITUTION);	// default epsilon
 		cDynamicLink* link = object->newLink(default_mat);
-		link->m_name = "object_link";
+		link->m_name = object_link_name;
 
 		// load object graphics, must have atleast one
 		for (const auto collision_ptr : object_ptr->collision_array) {
@@ -344,9 +349,8 @@ void URDFToDynamics3dWorld(
 		object->m_name = object_ptr->name;
 
 		// record base pose
-		dyn_object_base_pose[object->m_name] = Eigen::Affine3d(tmp_q);
-		dyn_object_base_pose.at(object->m_name).translation() =
-			tmp_cvec3.eigen();
+		dyn_objects_pose[object->m_name] = Eigen::Affine3d(tmp_q);
+		dyn_objects_pose.at(object->m_name).translation() = tmp_cvec3.eigen();
 
 		// add a link for collision
 		auto default_mat = new cDynamicMaterial();
@@ -354,7 +358,7 @@ void URDFToDynamics3dWorld(
 		default_mat->setEpsilon(
 			CDYN_DEFAULT_MAT_RESTITUTION);	// default epsilon
 		cDynamicLink* linkObject = object->newLink(default_mat);
-		linkObject->m_name = "object_link";
+		linkObject->m_name = object_link_name;
 
 		// set mass properties
 		Vector3d link_inertial_rpy;	 // inertial frame rotation in Euler XYZ

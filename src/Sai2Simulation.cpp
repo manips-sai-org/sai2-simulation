@@ -40,13 +40,16 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	_force_sensors.clear();
 	_applied_robot_torques.clear();
 	_applied_object_torques.clear();
-	_dyn_object_base_pose.clear();
+	_dyn_objects_init_pose.clear();
+	_dyn_objects_pose.clear();
+	_static_objects_pose.clear();
+	_dyn_objects_velocity.clear();
 
 	// create a dynamics world
 	_world = std::make_shared<cDynamicWorld>(nullptr);
 
-	URDFToDynamics3dWorld(path_to_world_file, _world, _dyn_object_base_pose,
-						  _robot_filenames, verbose);
+	URDFToDynamics3dWorld(path_to_world_file, _world, _dyn_objects_init_pose,
+						  _static_objects_pose, _robot_filenames, verbose);
 
 	// enable dynamics for all robots and objects in this world
 	for (auto dyn_element : _world->m_dynamicObjects) {
@@ -72,6 +75,9 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	}
 	for (const auto& object_name : getObjectNames()) {
 		_applied_object_torques[object_name] = Eigen::VectorXd::Zero(6);
+		_dyn_objects_pose[object_name] = std::make_shared<Eigen::Affine3d>(
+			_dyn_objects_init_pose.at(object_name));
+		_dyn_objects_velocity[object_name] = Eigen::VectorXd::Zero(6);
 	}
 }
 
@@ -85,7 +91,7 @@ const std::vector<std::string> Sai2Simulation::getRobotNames() const {
 
 const std::vector<std::string> Sai2Simulation::getObjectNames() const {
 	std::vector<std::string> object_names;
-	for (const auto& it : _dyn_object_base_pose) {
+	for (const auto& it : _dyn_objects_init_pose) {
 		object_names.push_back(it.first);
 	}
 	return object_names;
@@ -116,6 +122,7 @@ void Sai2Simulation::setTimestep(const double dt) {
 			"simulation timestep cannot be 0 or negative");
 	}
 	double prev_timestep = _timestep;
+	_world->setCollisionRate(dt);
 	for (auto sensor : _force_sensors) {
 		double cutoff = sensor->getNormalizedCutoffFreq() / prev_timestep;
 		sensor->enableFilter(cutoff * dt);
@@ -228,43 +235,35 @@ const Eigen::VectorXd Sai2Simulation::getJointPositions(
 // read object pose
 const Eigen::Affine3d Sai2Simulation::getObjectPose(
 	const std::string& object_name) const {
-	if (!objectExistsInWorld(object_name)) {
-		throw std::invalid_argument(
-			"cannot get pose for object [" + object_name +
-			"] that does not exists in simulated world");
+	if (dynamicObjectExistsInWorld(object_name)) {
+		return *_dyn_objects_pose.at(object_name);
 	}
-	auto object = _world->getBaseNode(object_name);
-	chai3d::cQuaternion quat = object->m_dynamicJoints[3]->getPosSpherical();
-
-	Eigen::Affine3d obj_pose_from_base =
-		Eigen::Affine3d(Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z));
-	obj_pose_from_base.translation() << object->m_dynamicJoints[0]->getPos(),
-		object->m_dynamicJoints[1]->getPos(),
-		object->m_dynamicJoints[2]->getPos();
-
-	return _dyn_object_base_pose.at(object_name) * obj_pose_from_base;
+	if (staticObjectExistsInWorld(object_name)) {
+		return _static_objects_pose.at(object_name);
+	}
+	throw std::invalid_argument("cannot get pose for object [" + object_name +
+								"] that does not exists in simulated world");
 }
 
 // set object pose
 void Sai2Simulation::setObjectPose(const std::string& object_name,
 								   const Eigen::Affine3d& pose) const {
-	if (!objectExistsInWorld(object_name)) {
+	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
-			"cannot set pose for object [" + object_name +
+			"cannot set pose for dynamic object [" + object_name +
 			"] that does not exists in simulated world");
 	}
 	auto object = _world->getBaseNode(object_name);
-
 	Eigen::Affine3d pose_local =
-		_dyn_object_base_pose.at(object_name).inverse() * pose;
-
+		_dyn_objects_init_pose.at(object_name).inverse() * pose;
 	for (int i = 0; i < 3; i++) {
 		object->m_dynamicJoints[i]->setPos(pose_local.translation()(i));
 	}
 	chai3d::cQuaternion quat;
 	quat.fromRotMat(pose_local.rotation());
-
 	object->m_dynamicJoints[3]->setPosSpherical(quat);
+
+	*_dyn_objects_pose.at(object_name) = pose;
 }
 
 // set joint position for a single joint
@@ -367,37 +366,27 @@ const Eigen::VectorXd Sai2Simulation::getJointVelocities(
 // read object velocities
 const Eigen::VectorXd Sai2Simulation::getObjectVelocity(
 	const std::string& object_name) const {
-	if (!objectExistsInWorld(object_name)) {
+	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
-			"cannot get velocities for object [" + object_name +
+			"cannot get velocities for dynamic object [" + object_name +
 			"] that does not exists in simulated world");
 	}
-	auto object = _world->getBaseNode(object_name);
-	Eigen::VectorXd vel_ret(6);
-	vel_ret.head(3) << object->m_dynamicJoints[0]->getVel(),
-		object->m_dynamicJoints[1]->getVel(),
-		object->m_dynamicJoints[2]->getVel();
-	vel_ret.tail(3) = object->m_dynamicJoints[3]->getVelSpherical().eigen();
-	vel_ret.head(3) =
-		_dyn_object_base_pose.at(object_name).rotation() * vel_ret.head(3);
-	vel_ret.tail(3) =
-		_dyn_object_base_pose.at(object_name).rotation() * vel_ret.tail(3);
-	return vel_ret;
+	return _dyn_objects_velocity.at(object_name);
 }
 
 void Sai2Simulation::setObjectVelocity(
 	const std::string& object_name, const Eigen::Vector3d& linear_velocity,
 	const Eigen::Vector3d& angular_velocity) {
-	if (!objectExistsInWorld(object_name)) {
+	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
-			"cannot set velocities for object [" + object_name +
+			"cannot set velocities for dynamic object [" + object_name +
 			"] that does not exists in simulated world");
 	}
 	Vector3d linear_vel_object_frame =
-		_dyn_object_base_pose.at(object_name).rotation().transpose() *
+		_dyn_objects_init_pose.at(object_name).rotation().transpose() *
 		linear_velocity;
 	Vector3d angular_vel_object_frame =
-		_dyn_object_base_pose.at(object_name).rotation().transpose() *
+		_dyn_objects_init_pose.at(object_name).rotation().transpose() *
 		angular_velocity;
 	auto object = _world->getBaseNode(object_name);
 	object->m_dynamicJoints[0]->setVel(linear_vel_object_frame(0));
@@ -406,6 +395,9 @@ void Sai2Simulation::setObjectVelocity(
 	object->m_dynamicJoints[3]->setVelSpherical(chai3d::cVector3d(
 		angular_vel_object_frame(0), angular_vel_object_frame(1),
 		angular_vel_object_frame(2)));
+
+	_dyn_objects_velocity.at(object_name).head(3) = linear_velocity;
+	_dyn_objects_velocity.at(object_name).tail(3) = angular_velocity;
 }
 
 // set joint torques
@@ -421,6 +413,14 @@ void Sai2Simulation::setJointTorques(const std::string& robot_name,
 			"size of torque vector inconsistent in setJointTorques");
 	}
 	_applied_robot_torques.at(robot_name) = tau;
+	for (const auto spherical_joint_description :
+		 _robot_models.at(robot_name)->sphericalJoints()) {
+		int index = spherical_joint_description.index;
+		string child_link = spherical_joint_description.child_link_name;
+		Matrix3d R = _robot_models.at(robot_name)->rotationInWorld(child_link);
+		_applied_robot_torques.at(robot_name).segment<3>(index) =
+			R.transpose() * tau.segment<3>(index);
+	}
 }
 
 // set joint torque for a single joint
@@ -432,19 +432,33 @@ void Sai2Simulation::setJointTorque(const std::string& robot_name,
 			"] that does not exists in simulated world");
 	}
 	_applied_robot_torques.at(robot_name)(joint_id) = tau;
+	for (const auto spherical_joint_description :
+		 _robot_models.at(robot_name)->sphericalJoints()) {
+		int index = spherical_joint_description.index;
+		if (index == joint_id || index == joint_id - 1 ||
+			index == joint_id - 2) {
+			Vector3d tau_sph = Vector3d::Zero();
+			tau_sph(joint_id - index) = tau;
+			string child_link = spherical_joint_description.child_link_name;
+			Matrix3d R =
+				_robot_models.at(robot_name)->rotationInWorld(child_link);
+			_applied_robot_torques.at(robot_name).segment<3>(index) =
+				R.transpose() * tau_sph;
+		}
+	}
 }
 
 void Sai2Simulation::setObjectForceTorque(const std::string& object_name,
 										  const Eigen::Vector6d& tau) {
-	if (!objectExistsInWorld(object_name)) {
+	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
-			"cannot set torques for object [" + object_name +
+			"cannot set torques for dynamic object [" + object_name +
 			"] that does not exists in simulated world");
 	}
 	// linear forces are applied in object base frame (before the rotation
 	// from the spherical joint)
 	_applied_object_torques.at(object_name).head<3>() =
-		_dyn_object_base_pose.at(object_name).rotation().transpose() *
+		_dyn_objects_init_pose.at(object_name).rotation().transpose() *
 		tau.head<3>();
 	// spherical torques are applied in the object local frame (after
 	// rotation from the spherical joint)
@@ -540,6 +554,36 @@ void Sai2Simulation::integrate() {
 		robot_model->setQ(getJointPositions(robot_name));
 		robot_model->updateKinematics();
 	}
+	// update dynamic objects poses and velocities
+	for (auto pair : _dyn_objects_init_pose) {
+		auto object_name = pair.first;
+		auto object_init_pose = pair.second;
+		auto object = _world->getBaseNode(object_name);
+		chai3d::cQuaternion quat =
+			object->m_dynamicJoints[3]->getPosSpherical();
+		Eigen::Affine3d obj_pose_from_base =
+			Eigen::Affine3d(Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z));
+		obj_pose_from_base.translation()
+			<< object->m_dynamicJoints[0]->getPos(),
+			object->m_dynamicJoints[1]->getPos(),
+			object->m_dynamicJoints[2]->getPos();
+		*_dyn_objects_pose.at(object_name) =
+			object_init_pose * obj_pose_from_base;
+
+		Eigen::VectorXd velocity_in_object_frame(6);
+		velocity_in_object_frame.head(3)
+			<< object->m_dynamicJoints[0]->getVel(),
+			object->m_dynamicJoints[1]->getVel(),
+			object->m_dynamicJoints[2]->getVel();
+		velocity_in_object_frame.tail(3) =
+			object->m_dynamicJoints[3]->getVelSpherical().eigen();
+		_dyn_objects_velocity.at(object_name).head(3) =
+			_dyn_objects_init_pose.at(object_name).rotation() *
+			velocity_in_object_frame.head(3);
+		_dyn_objects_velocity.at(object_name).tail(3) =
+			_dyn_objects_init_pose.at(object_name).rotation() *
+			velocity_in_object_frame.tail(3);
+	}
 	// update force sensors if any
 	for (auto sensor : _force_sensors) {
 		sensor->update(getDynamicWorld());
@@ -554,7 +598,7 @@ void Sai2Simulation::showContactInfo() {
 		int num_contacts = object->m_dynamicContacts->getNumContacts();
 		// consider only contacting objects
 		if (num_contacts > 0) {
-			std::cout << "object name : " << object->m_name << std::endl;
+			std::cout << "model name : " << object->m_name << std::endl;
 			std::cout << "num contacts : " << num_contacts << std::endl;
 			for (int k = 0; k < num_contacts; k++) {
 				cDynamicContact* contact =
@@ -579,16 +623,18 @@ void Sai2Simulation::showContactInfo() {
 	}
 }
 
-void Sai2Simulation::showLinksInContact(const std::string robot_name) {
+void Sai2Simulation::showLinksInContact(
+	const std::string robot_or_object_name) {
 	std::list<cDynamicBase*>::iterator i;
 	for (i = _world->m_dynamicObjects.begin();
 		 i != _world->m_dynamicObjects.end(); ++i) {
 		cDynamicBase* object = *i;
-		if (object->m_name == robot_name) {
+		if (object->m_name == robot_or_object_name) {
 			int num_contacts = object->m_dynamicContacts->getNumContacts();
 			if (num_contacts > 0) {
 				std::set<std::string> contact_links;
-				std::cout << "contacts on robot : " << robot_name << std::endl;
+				std::cout << "contacts on model : " << robot_or_object_name
+						  << std::endl;
 				for (int k = 0; k < num_contacts; k++) {
 					contact_links.insert(
 						object->m_dynamicContacts->getContact(k)
@@ -610,6 +656,11 @@ Sai2Simulation::getContactList(const ::std::string& robot_name,
 	return _world->getContactList(robot_name, link_name);
 }
 
+const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+Sai2Simulation::getContactList(const ::std::string& object_name) const {
+	return _world->getContactList(object_name, object_link_name);
+}
+
 void Sai2Simulation::addSimulatedForceSensor(
 	const std::string& robot_name, const std::string& link_name,
 	const Eigen::Affine3d transform_in_link,
@@ -618,6 +669,15 @@ void Sai2Simulation::addSimulatedForceSensor(
 		std::cout << "\n\nWARNING: trying to add a force sensor to an "
 					 "unexisting robot or link in "
 					 "Sai2Simulation::addSimulatedForceSensor\n"
+				  << std::endl;
+		return;
+	}
+	if (link_name == object_link_name) {
+		std::cout << "\n\nWARNING: a force sensor cannot be attached to a "
+					 "robot link with name ["
+				  << object_link_name
+				  << "] please rename this link or attach the sensor to "
+					 "another link\n"
 				  << std::endl;
 		return;
 	}
@@ -633,6 +693,34 @@ void Sai2Simulation::addSimulatedForceSensor(
 		filter_cutoff_frequency * _timestep));
 }
 
+void Sai2Simulation::addSimulatedForceSensor(
+	const std::string& object_name, const Eigen::Affine3d transform_in_link,
+	const double filter_cutoff_frequency) {
+	if (findSimulatedForceSensor(object_name, object_link_name) != -1) {
+		std::cout << "\n\nWARNING: only one force sensor is supported per "
+					 "link in Sai2Simulation::addSimulatedForceSensor. Not "
+					 "adding the second one\n"
+				  << std::endl;
+		return;
+	}
+	if (staticObjectExistsInWorld(object_name)) {
+		_force_sensors.push_back(std::make_shared<ForceSensorSim>(
+			object_name, object_link_name, transform_in_link,
+			std::make_shared<Affine3d>(_static_objects_pose.at(object_name)),
+			filter_cutoff_frequency * _timestep));
+	} else if (dynamicObjectExistsInWorld(object_name)) {
+		_force_sensors.push_back(std::make_shared<ForceSensorSim>(
+			object_name, object_link_name, transform_in_link,
+			_dyn_objects_pose.at(object_name),
+			filter_cutoff_frequency * _timestep));
+	} else {
+		std::cout << "\n\nWARNING: trying to add a force sensor to an "
+					 "unexisting object in "
+					 "Sai2Simulation::addSimulatedForceSensor\n"
+				  << std::endl;
+	}
+}
+
 Eigen::Vector3d Sai2Simulation::getSensedForce(
 	const std::string& robot_name, const std::string& link_name,
 	const bool in_sensor_frame) const {
@@ -641,6 +729,20 @@ Eigen::Vector3d Sai2Simulation::getSensedForce(
 		std::cout << "WARNING: no force sensor registered on robot ["
 				  << robot_name << "] and link [" << link_name
 				  << "]. Returning Zero forces" << std::endl;
+		return Eigen::Vector3d::Zero();
+	}
+	if (in_sensor_frame) {
+		return _force_sensors.at(sensor_index)->getForceLocalFrame();
+	}
+	return _force_sensors.at(sensor_index)->getForceWorldFrame();
+}
+
+Eigen::Vector3d Sai2Simulation::getSensedForce(const std::string& object_name,
+											   const bool in_sensor_frame) const {
+	int sensor_index = findSimulatedForceSensor(object_name, object_link_name);
+	if (sensor_index == -1) {
+		std::cout << "WARNING: no force sensor registered on object ["
+				  << object_name << "]. Returning Zero forces" << std::endl;
 		return Eigen::Vector3d::Zero();
 	}
 	if (in_sensor_frame) {
@@ -665,6 +767,20 @@ Eigen::Vector3d Sai2Simulation::getSensedMoment(
 	return _force_sensors.at(sensor_index)->getMomentWorldFrame();
 }
 
+Eigen::Vector3d Sai2Simulation::getSensedMoment(const std::string& object_name,
+												const bool in_sensor_frame) const {
+	int sensor_index = findSimulatedForceSensor(object_name, object_link_name);
+	if (sensor_index == -1) {
+		std::cout << "WARNING: no force sensor registered on object ["
+				  << object_name << "]. Returning Zero moments" << std::endl;
+		return Eigen::Vector3d::Zero();
+	}
+	if (in_sensor_frame) {
+		return _force_sensors.at(sensor_index)->getMomentLocalFrame();
+	}
+	return _force_sensors.at(sensor_index)->getMomentWorldFrame();
+}
+
 const std::vector<Sai2Model::ForceSensorData>
 Sai2Simulation::getAllForceSensorData() const {
 	std::vector<Sai2Model::ForceSensorData> sensor_data;
@@ -675,9 +791,11 @@ Sai2Simulation::getAllForceSensorData() const {
 }
 
 const int Sai2Simulation::findSimulatedForceSensor(
-	const std::string& robot_name, const std::string& link_name) const {
+	const std::string& robot_or_object_name,
+	const std::string& link_name) const {
 	for (int i = 0; i < _force_sensors.size(); ++i) {
-		if ((_force_sensors.at(i)->getData().robot_name == robot_name) &&
+		if ((_force_sensors.at(i)->getData().robot_or_object_name ==
+			 robot_or_object_name) &&
 			(_force_sensors.at(i)->getData().link_name == link_name)) {
 			return i;
 		}
@@ -697,10 +815,19 @@ const bool Sai2Simulation::robotExistsInWorld(
 	return true;
 }
 
-const bool Sai2Simulation::objectExistsInWorld(
+const bool Sai2Simulation::dynamicObjectExistsInWorld(
 	const std::string& object_name) const {
-	auto it = _dyn_object_base_pose.find(object_name);
-	if (it == _dyn_object_base_pose.end()) {
+	auto it = _dyn_objects_init_pose.find(object_name);
+	if (it == _dyn_objects_init_pose.end()) {
+		return false;
+	}
+	return true;
+}
+
+const bool Sai2Simulation::staticObjectExistsInWorld(
+	const std::string& object_name) const {
+	auto it = _static_objects_pose.find(object_name);
+	if (it == _static_objects_pose.end()) {
 		return false;
 	}
 	return true;
@@ -711,6 +838,21 @@ void Sai2Simulation::setDynamicsEnabled(const bool enabled,
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
 		if (base->m_name == robot_or_object_name) {
 			base->enableDynamics(enabled);
+		}
+	}
+}
+
+void Sai2Simulation::setJointDamping(const double damping,
+									 const string robot_or_object_name,
+									 const string joint_name) {
+	for (cDynamicBase* base : _world->m_dynamicObjects) {
+		if (robot_or_object_name.empty() ||
+			base->m_name == robot_or_object_name) {
+			for (cDynamicJoint* joint : base->m_dynamicJoints) {
+				if (joint_name.empty() || joint->m_name == joint_name) {
+					joint->setDamping(damping);
+				}
+			}
 		}
 	}
 }
@@ -733,16 +875,17 @@ void Sai2Simulation::setCollisionRestitution(const double restitution,
 
 const double Sai2Simulation::getCollisionRestitution(
 	const std::string& object_name) const {
-	return getCollisionRestitution(object_name, "object_link");
+	return getCollisionRestitution(object_name, object_link_name);
 }
 
 // get co-efficient of restitution: for a named robot and link
 const double Sai2Simulation::getCollisionRestitution(
 	const std::string& robot_name, const std::string& link_name) const {
 	if (!robotExistsInWorld(robot_name, link_name) &&
-		(!objectExistsInWorld(robot_name) || link_name != "object_link")) {
+		(!dynamicObjectExistsInWorld(robot_name) ||
+		 link_name != object_link_name)) {
 		throw std::invalid_argument(
-			"cannot get collision restitution to link [" + link_name +
+			"cannot get collision restitution for link [" + link_name +
 			"] of [" + robot_name + "] that doesn't exists in simulation");
 	}
 	auto robot = _world->getBaseNode(robot_name);
@@ -769,16 +912,17 @@ void Sai2Simulation::setCoeffFrictionStatic(const double static_friction,
 
 const double Sai2Simulation::getCoeffFrictionStatic(
 	const std::string& object_name) const {
-	return getCoeffFrictionStatic(object_name, "object_link");
+	return getCoeffFrictionStatic(object_name, object_link_name);
 }
 
 // get co-efficient of static friction: for a named robot and link
 const double Sai2Simulation::getCoeffFrictionStatic(
 	const std::string& robot_name, const std::string& link_name) const {
 	if (!robotExistsInWorld(robot_name, link_name) &&
-		(!objectExistsInWorld(robot_name) || link_name != "object_link")) {
+		(!dynamicObjectExistsInWorld(robot_name) ||
+		 link_name != object_link_name)) {
 		throw std::invalid_argument(
-			"cannot get static coefficient of friction to link [" + link_name +
+			"cannot get static coefficient of friction for link [" + link_name +
 			"] of [" + robot_name + "] that doesn't exists in simulation");
 	}
 	auto robot = _world->getBaseNode(robot_name);
@@ -805,14 +949,15 @@ void Sai2Simulation::setCoeffFrictionDynamic(const double dynamic_friction,
 
 const double Sai2Simulation::getCoeffFrictionDynamic(
 	const std::string& object_name) const {
-	return getCoeffFrictionDynamic(object_name, "object_link");
+	return getCoeffFrictionDynamic(object_name, object_link_name);
 }
 
 // get co-efficient of dynamic friction: for a named robot and link
 const double Sai2Simulation::getCoeffFrictionDynamic(
 	const std::string& robot_name, const std::string& link_name) const {
 	if (!robotExistsInWorld(robot_name, link_name) &&
-		(!objectExistsInWorld(robot_name) || link_name != "object_link")) {
+		(!dynamicObjectExistsInWorld(robot_name) ||
+		 link_name != object_link_name)) {
 		throw std::invalid_argument(
 			"cannot get dynamic coefficient of friction to link [" + link_name +
 			"] of [" + robot_name + "] that doesn't exists in simulation");

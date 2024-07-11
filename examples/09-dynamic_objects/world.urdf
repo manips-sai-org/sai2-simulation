@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<world name="demo_world" gravity="0.0 0.0 0.0">
+<world name="demo_world" gravity="0.0 0.0 -9.81">
 
 	<static_object name="Floor">
 		<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />

@@ -27,7 +27,14 @@ public:
 		const std::string& link_name,
 		const Eigen::Affine3d& transform_in_link,
 		std::shared_ptr<Sai2Model::Sai2Model> model,
-		const double _filter_normalized_cutoff_freq = 0.0);
+		const double filter_normalized_cutoff_freq = 0.0);
+
+	ForceSensorSim(
+		const std::string& object_name,
+		const std::string& link_name,
+		const Eigen::Affine3d& transform_in_link,
+		std::shared_ptr<Eigen::Affine3d> object_pose,
+		const double filter_normalized_cutoff_freq = 0.0);
 
 	//dtor
 	~ForceSensorSim();
@@ -58,8 +65,11 @@ public:
 	}
 
 private:
-	// handle to model interface
+	// handle to model interface if the sesnor is attached to a robot
 	std::shared_ptr<Sai2Model::Sai2Model> _robot;
+
+	// handle to object pose if the sensor is attached to an object
+	std::shared_ptr<Eigen::Affine3d> _object_pose;
 
 	// last updated data
 	Sai2Model::ForceSensorData _data;

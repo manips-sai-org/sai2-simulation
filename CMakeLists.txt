@@ -16,6 +16,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+option(BUILD_EXAMPLES "Build examples" ON)
+
 # set version info
 file(READ ${PROJECT_SOURCE_DIR}/version VERSION)
 string(REGEX REPLACE ".*MAJOR=([0-9]+).*" "\\1" MAJOR_VERSION "${VERSION}")
@@ -124,7 +126,9 @@ set(SAI2-SIMULATION_DEFINITIONS ${PROJECT_DEFINITIONS})
 #
 
 # examples
-add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
+if(BUILD_EXAMPLES)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
+endif()
 
 #
 # export package

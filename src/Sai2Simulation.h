@@ -74,6 +74,8 @@ public:
 		return _world->getGravity().eigen();
 	}
 
+	const MatrixXd computeAndGetMassMatrix(const std::string& robot_name);
+
 	/**
 	 * @brief Set joint positions as an array. Assumes serial or tree chain
 	 * robot.

@@ -536,6 +536,17 @@ const Eigen::VectorXd Sai2Simulation::getJointAccelerations(
 	return ddq_ret;
 }
 
+const MatrixXd Sai2Simulation::computeAndGetMassMatrix(const std::string& robot_name) {
+	if (!robotExistsInWorld(robot_name)) {
+		throw std::invalid_argument(
+			"cannot get mass matrix for robot [" + robot_name +
+			"] that does not exists in simulated world");
+	}
+	_robot_models.at(robot_name)->updateModel();
+	return _robot_models.at(robot_name)->M();
+}
+
+
 // integrate ahead
 void Sai2Simulation::integrate() {
 	if (_is_paused) {

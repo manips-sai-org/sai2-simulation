@@ -73,14 +73,23 @@ static void loadLinkCollision(
 				Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename);
 		}
 
-		if (processed_filepath.substr(processed_filepath.length() - 4) ==
-			".stl") {
+		if (processed_filepath.length() < 5) {
+			cerr << "Couldn't load obj/3ds/STL robot link file, extension not "
+					"supported: "
+				 << processed_filepath << endl;
+			abort();
+		}
+
+		std::string extension =
+			processed_filepath.substr(processed_filepath.length() - 4);
+		std::transform(extension.begin(), extension.end(), extension.begin(),
+					   [](unsigned char c) { return std::tolower(c); });
+
+		if (extension == ".stl") {
 			file_load_success = cLoadFileSTL(tmp_mmesh, processed_filepath);
-		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
-				   ".obj") {
+		} else if (extension == ".obj") {
 			file_load_success = cLoadFileOBJ(tmp_mmesh, processed_filepath);
-		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
-				   ".3ds") {
+		} else if (extension == ".3ds") {
 			file_load_success = cLoadFile3DS(tmp_mmesh, processed_filepath);
 		}
 		if (!file_load_success) {
@@ -177,8 +186,6 @@ static void loadLinkInertial(
 		link_inertial_inertia(2, 1) = urdf_link->inertial->iyz;
 		link_inertial_inertia(2, 2) = urdf_link->inertial->izz;
 
-		// TODO: abort if link inertia is not symmetric
-
 		// copy root inertia rotation (Euler XYZ moving notation)
 		// root_inertial_rpy is not used anywhere. It is not supported
 		// currently.
@@ -192,7 +199,11 @@ static void loadLinkInertial(
 				 << endl;
 			abort();
 		}
-	}  // else use default
+	} else {
+		cerr << "Error while processing body '" << urdf_link->name
+			 << "': no inertial data found. Please specify inertial data."
+			 << endl;
+	}
 
 	// transform the inertial properties back to the ones
 	// defined in the actual frame from urdf if needed

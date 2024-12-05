@@ -140,6 +140,10 @@ void Sai2Simulation::enableJointLimits(const std::string& robot_name) {
 	auto dyn_robot = _world->getBaseNode(robot_name);
 	for (const Sai2Model::JointLimit joint_limit :
 		 _robot_models.at(robot_name)->jointLimits()) {
+		if (joint_limit.position_upper == std::numeric_limits<double>::max() ||
+			joint_limit.position_lower == -std::numeric_limits<double>::max()) {
+			continue;
+		}
 		auto dyn_joint = dyn_robot->getJoint(joint_limit.joint_name);
 		double current_joint_pos =
 			q(_robot_models.at(robot_name)->jointIndex(joint_limit.joint_name));
@@ -536,7 +540,8 @@ const Eigen::VectorXd Sai2Simulation::getJointAccelerations(
 	return ddq_ret;
 }
 
-const MatrixXd Sai2Simulation::computeAndGetMassMatrix(const std::string& robot_name) {
+const MatrixXd Sai2Simulation::computeAndGetMassMatrix(
+	const std::string& robot_name) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot get mass matrix for robot [" + robot_name +
@@ -545,7 +550,6 @@ const MatrixXd Sai2Simulation::computeAndGetMassMatrix(const std::string& robot_
 	_robot_models.at(robot_name)->updateModel();
 	return _robot_models.at(robot_name)->M();
 }
-
 
 // integrate ahead
 void Sai2Simulation::integrate() {
@@ -748,8 +752,8 @@ Eigen::Vector3d Sai2Simulation::getSensedForce(
 	return _force_sensors.at(sensor_index)->getForceWorldFrame();
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedForce(const std::string& object_name,
-											   const bool in_sensor_frame) const {
+Eigen::Vector3d Sai2Simulation::getSensedForce(
+	const std::string& object_name, const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(object_name, object_link_name);
 	if (sensor_index == -1) {
 		std::cout << "WARNING: no force sensor registered on object ["
@@ -778,8 +782,8 @@ Eigen::Vector3d Sai2Simulation::getSensedMoment(
 	return _force_sensors.at(sensor_index)->getMomentWorldFrame();
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedMoment(const std::string& object_name,
-												const bool in_sensor_frame) const {
+Eigen::Vector3d Sai2Simulation::getSensedMoment(
+	const std::string& object_name, const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(object_name, object_link_name);
 	if (sensor_index == -1) {
 		std::cout << "WARNING: no force sensor registered on object ["

@@ -52,7 +52,7 @@ include(${PROJECT_SOURCE_DIR}/CMakeOptions.txt OPTIONAL)
 
 # optional configuration (configured based on CMakeOptions.txt) -
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
+set(CMAKE_CXX_FLAGS "-std=c++17 -I/usr/include -I/usr/local/include -fPIC")
 # Windows global build options
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   message(FATAL_ERROR "Windows system detected. Currently unsupported.")

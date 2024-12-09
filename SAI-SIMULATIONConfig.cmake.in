@@ -1,0 +1,15 @@
+# License pending
+# Original author: seb
+# Subsequent authors: Shameek Ganguly
+
+
+# compute paths
+get_filename_component(SAI-SIMULATION_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(SAI-SIMULATION_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+set(SAI-SIMULATION_DEFINITIONS "@CONF_DEFINITIONS@")
+set(SAI-SIMULATION_LIBRARIES "@CONF_LIBRARIES@")
+
+# library dependencies (contains definitions for IMPORTED targets)
+if(NOT TARGET sai-simulation AND NOT SAI-SIMULATION_BINARY_DIR)
+  include("${SAI-SIMULATION_CMAKE_DIR}/SAI-SIMULATIONTargets.cmake")
+endif()

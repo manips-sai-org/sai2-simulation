@@ -1,9 +1,9 @@
 // This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Sai2Simulation virtual world. A graphics model
+// with physics and contact in a SaiSimulation virtual world. A graphics model
 // of it is also shown using Chai3D.
 
-#include <Sai2Graphics.h>
-#include <Sai2Simulation.h>
+#include <SaiGraphics.h>
+#include <SaiSimulation.h>
 
 #include <iostream>
 #include <string>
@@ -17,12 +17,12 @@ unsigned long long simulation_counter = 0;
 
 int main() {
 	// load simulation world
-	auto sim = new Sai2Simulation::Sai2Simulation(world_file_1);
+	auto sim = new SaiSimulation::SaiSimulation(world_file_1);
 	auto robot_names = sim->getRobotNames();
 	sim->setTimestep(0.01);
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file_1);
+	auto graphics = new SaiGraphics::SaiGraphics(world_file_1);
 
 	cout << endl
 		 << "In this example, the simulation and graphics are switching "

@@ -2,8 +2,8 @@
 #include <string>
 #include <thread>
 
-#include "Sai2Graphics.h"
-#include "Sai2Simulation.h"
+#include "SaiGraphics.h"
+#include "SaiSimulation.h"
 #include "unistd.h"
 
 using namespace std;
@@ -15,16 +15,16 @@ const string robot_name = "RRBot";
 bool fSimulationRunning = false;
 
 // sim
-void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
+void simulation(std::shared_ptr<SaiSimulation::SaiSimulation> sim);
 
 int main(int argc, char** argv) {
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
-	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_fname);
+	auto sim = make_shared<SaiSimulation::SaiSimulation>(world_fname);
 
 	// load graphics scene
-	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_fname);
+	auto graphics = make_shared<SaiGraphics::SaiGraphics>(world_fname);
 	graphics->setBackgroundColor(0.2, 0.2, 0.2);
 
 	cout << endl
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 }
 
 //------------------------------------------------------------------------------
-void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
+void simulation(std::shared_ptr<SaiSimulation::SaiSimulation> sim) {
 	fSimulationRunning = true;
 	double timestep = sim->timestep();
 

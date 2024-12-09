@@ -9,7 +9,7 @@
 #
 
 cmake_minimum_required(VERSION 3.10)
-project(SAI2-SIMULATION)
+project(SAI-SIMULATION)
 # set default build to release
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Release' as none was specified.")
@@ -35,17 +35,17 @@ include_directories(${CHAI3D_INCLUDE_DIRS})
 link_directories(${CHAI3D_LIBRARY_DIRS})
 add_definitions(${CHAI3D_DEFINITIONS})
 
-# Sai2-urdfreader
-find_package(SAI2-URDF REQUIRED)
-include_directories(${SAI2-URDF_INCLUDE_DIRS})
+# Sai-urdfreader
+find_package(SAI-URDF REQUIRED)
+include_directories(${SAI-URDF_INCLUDE_DIRS})
 
-# Sai2-Model
-find_package(SAI2-MODEL REQUIRED)
-include_directories(${SAI2-MODEL_INCLUDE_DIRS})
+# Sai-Model
+find_package(SAI-MODEL REQUIRED)
+include_directories(${SAI-MODEL_INCLUDE_DIRS})
 
-# Sai2-Common
-find_package(SAI2-COMMON REQUIRED)
-include_directories(${SAI2-COMMON_INCLUDE_DIRS})
+# Sai-Common
+find_package(SAI-COMMON REQUIRED)
+include_directories(${SAI-COMMON_INCLUDE_DIRS})
 
 # optional settings
 include(${PROJECT_SOURCE_DIR}/CMakeOptions.txt OPTIONAL)
@@ -80,8 +80,8 @@ file(GLOB_RECURSE source_chai3d ${PROJECT_SOURCE_DIR}/src/chai3d/*.cpp)
 file(GLOB_RECURSE source_parser ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
 file(GLOB_RECURSE source_force_sensor
      ${PROJECT_SOURCE_DIR}/src/force_sensor_sim/*.cpp)
-set(source_sai2_simulation
-    ${PROJECT_SOURCE_DIR}/src/Sai2Simulation.cpp ${source_chai3d}
+set(source_sai_simulation
+    ${PROJECT_SOURCE_DIR}/src/SaiSimulation.cpp ${source_chai3d}
     ${source_parser} ${source_force_sensor})
 
 # build flags
@@ -98,12 +98,12 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(CORE_LIB_DIR "${CORE_LIB_OS_DIR}/x86_64")
   endif()
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-  if(EXISTS "${CORE_LIB_OS_DIR}/i386/libsai2-simulation-core.a")
+  if(EXISTS "${CORE_LIB_OS_DIR}/i386/libsai-simulation-core.a")
     set(CORE_LIB_DIR "${CORE_LIB_OS_DIR}/i386")
   else()
     message(
       FATAL_ERROR
-        "32 bit version of sai2-simulation-core has not been built yet. Please contact SAI admin."
+        "32 bit version of sai-simulation-core has not been built yet. Please contact SAI admin."
     )
   endif()
 else()
@@ -112,14 +112,14 @@ endif()
 add_definitions(${PROJECT_DEFINITIONS})
 
 # static library
-add_library(sai2-simulation STATIC ${source_sai2_simulation})
+add_library(sai-simulation STATIC ${source_sai_simulation})
 
 # library exports
-set(SAI2-SIMULATION_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src
+set(SAI-SIMULATION_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src
                                  ${PROJECT_SOURCE_DIR}/src/headers_core)
-set(SAI2-SIMULATION_LIBRARIES sai2-simulation
-                              ${CORE_LIB_DIR}/libsai2-simulation-core.a)
-set(SAI2-SIMULATION_DEFINITIONS ${PROJECT_DEFINITIONS})
+set(SAI-SIMULATION_LIBRARIES sai-simulation
+                              ${CORE_LIB_DIR}/libsai-simulation-core.a)
+set(SAI-SIMULATION_DEFINITIONS ${PROJECT_DEFINITIONS})
 
 #
 # executables
@@ -135,20 +135,20 @@ endif()
 #
 
 # export package for use from the build tree
-export(TARGETS sai2-simulation
-       FILE ${PROJECT_BINARY_DIR}/SAI2-SIMULATIONTargets.cmake)
-export(PACKAGE SAI2-SIMULATION)
+export(TARGETS sai-simulation
+       FILE ${PROJECT_BINARY_DIR}/SAI-SIMULATIONTargets.cmake)
+export(PACKAGE SAI-SIMULATION)
 
 # configure package
-set(CONF_INCLUDE_DIRS ${SAI2-SIMULATION_INCLUDE_DIRS})
-set(CONF_DEFINITIONS ${SAI2-SIMULATION_DEFINITIONS})
-set(CONF_LIBRARIES ${SAI2-SIMULATION_LIBRARIES})
+set(CONF_INCLUDE_DIRS ${SAI-SIMULATION_INCLUDE_DIRS})
+set(CONF_DEFINITIONS ${SAI-SIMULATION_DEFINITIONS})
+set(CONF_LIBRARIES ${SAI-SIMULATION_LIBRARIES})
 
 # create package configuration and version files
-configure_file(SAI2-SIMULATIONConfig.cmake.in
-               "${PROJECT_BINARY_DIR}/SAI2-SIMULATIONConfig.cmake" @ONLY)
+configure_file(SAI-SIMULATIONConfig.cmake.in
+               "${PROJECT_BINARY_DIR}/SAI-SIMULATIONConfig.cmake" @ONLY)
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/SAI2-SIMULATIONConfigVersion.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/SAI-SIMULATIONConfigVersion.cmake"
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY AnyNewerVersion)

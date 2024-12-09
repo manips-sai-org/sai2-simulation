@@ -2,9 +2,9 @@
 #include <string>
 #include <thread>
 
-#include "Sai2Graphics.h"
-#include "Sai2Model.h"
-#include "Sai2Simulation.h"
+#include "SaiGraphics.h"
+#include "SaiModel.h"
+#include "SaiSimulation.h"
 #include "unistd.h"
 
 using namespace std;
@@ -15,21 +15,21 @@ const string world_fname =
 bool fSimulationRunning = false;
 
 // sim
-void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
+void simulation(std::shared_ptr<SaiSimulation::SaiSimulation> sim);
 
 int main(int argc, char** argv) {
-	Sai2Model::URDF_FOLDERS["EXAMPLE_02_FOLDER"] =
+	SaiModel::URDF_FOLDERS["EXAMPLE_02_FOLDER"] =
 		string(EXAMPLES_FOLDER) + "/02-fixed_joint";
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
 	auto sim =
-		std::make_shared<Sai2Simulation::Sai2Simulation>(world_fname, false);
+		std::make_shared<SaiSimulation::SaiSimulation>(world_fname, false);
 	sim->setCollisionRestitution(1.0);
 
 	// load graphics scene
-	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(
-		world_fname, "sai2-simulation example 02-fixed_joint", false);
+	auto graphics = std::make_shared<SaiGraphics::SaiGraphics>(
+		world_fname, "sai-simulation example 02-fixed_joint", false);
 	graphics->setBackgroundColor(0.3, 0.3, 0.3);
 
 	cout << endl
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 }
 
 //------------------------------------------------------------------------------
-void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
+void simulation(std::shared_ptr<SaiSimulation::SaiSimulation> sim) {
 	fSimulationRunning = true;
 	double timestep = sim->timestep();
 

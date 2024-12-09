@@ -16,7 +16,7 @@
 #include "chai3d.h"
 //---------------------------------------------------------------------------
 
-namespace Sai2Simulation {
+namespace SaiSimulation {
 	// object link name to use accross the library
 	const std::string object_link_name = "object_link_name_reserved";
 }

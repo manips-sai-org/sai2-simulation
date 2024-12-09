@@ -1,9 +1,9 @@
 // This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Sai2Simulation virtual world. A graphics model
+// with physics and contact in a SaiSimulation virtual world. A graphics model
 // of it is also shown using Chai3D.
 
-#include <Sai2Graphics.h>
-#include <Sai2Simulation.h>
+#include <SaiGraphics.h>
+#include <SaiSimulation.h>
 
 #include <iostream>
 #include <string>
@@ -18,16 +18,16 @@ unsigned long long simulation_counter = 0;
 Eigen::VectorXd q_robot;
 
 int main() {
-	Sai2Model::URDF_FOLDERS["EXAMPLE_07_FOLDER"] =
+	SaiModel::URDF_FOLDERS["EXAMPLE_07_FOLDER"] =
 		string(EXAMPLES_FOLDER) + "/07-contact_info";
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load simulation world
-	auto sim = new Sai2Simulation::Sai2Simulation(world_file);
+	auto sim = new SaiSimulation::SaiSimulation(world_file);
 	sim->setTimestep(0.01);
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file);
+	auto graphics = new SaiGraphics::SaiGraphics(world_file);
 
 	// offset a joint initial condition
 	sim->setJointPosition(robot_name, 0,

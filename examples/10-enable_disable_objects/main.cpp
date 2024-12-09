@@ -1,5 +1,5 @@
-#include <Sai2Graphics.h>
-#include <Sai2Simulation.h>
+#include <SaiGraphics.h>
+#include <SaiSimulation.h>
 
 #include <iostream>
 #include <string>
@@ -13,7 +13,7 @@ int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load simulation world
-	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_file);
+	auto sim = make_shared<SaiSimulation::SaiSimulation>(world_file);
 	sim->setTimestep(0.01);
 	sim->setCollisionRestitution(0);
 	sim->enableGravityCompensation(true);
@@ -23,7 +23,7 @@ int main() {
 	Affine3d init_object_pose = sim->getObjectPose("Box1");
 
 	// load graphics scene
-	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_file);
+	auto graphics = make_shared<SaiGraphics::SaiGraphics>(world_file);
 
 	// graphics->showLinkFrame(true, "PANDA", "", 0.3);
 	sim->setDynamicsEnabled(false, "PANDA");

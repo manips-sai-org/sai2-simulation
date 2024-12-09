@@ -17,10 +17,10 @@ jobs:
       - name: build-repo
         uses: ./.github/actions/build-repo
         with: 
-          token: ${{ secrets.SAI2_TOKEN }}
+          token: ${{ secrets.SAI_TOKEN }}
 
-      - name: Archive Sai2-simulation Artifact
+      - name: Archive Sai-simulation Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: sai2-simulation-artifact
-          path: build/libsai2-simulation.a
+          name: sai-simulation-artifact
+          path: build/libsai-simulation.a

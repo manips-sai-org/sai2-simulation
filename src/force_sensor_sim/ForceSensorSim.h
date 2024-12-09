@@ -1,9 +1,9 @@
 // ForceSensorSim.h
-// Force sensor for SAI2-Simulation
+// Force sensor for SAI-Simulation
 #ifndef FORCE_SENSOR_SIM_H
 #define FORCE_SENSOR_SIM_H
 
-#include <Sai2Model.h>
+#include <SaiModel.h>
 #include <filters/ButterworthFilter.h>
 #include <Eigen/Dense>
 #include <string>
@@ -11,7 +11,7 @@
 #include "dynamics3d.h"
 #include <memory>
 
-namespace Sai2Simulation {
+namespace SaiSimulation {
 
 // Simulated force sensor type.
 // Note that this implementation ignores the mass and inertia of the object
@@ -26,7 +26,7 @@ public:
 		const std::string& robot_name,
 		const std::string& link_name,
 		const Eigen::Affine3d& transform_in_link,
-		std::shared_ptr<Sai2Model::Sai2Model> model,
+		std::shared_ptr<SaiModel::SaiModel> model,
 		const double filter_normalized_cutoff_freq = 0.0);
 
 	ForceSensorSim(
@@ -55,7 +55,7 @@ public:
 	const Eigen::Vector3d& getMomentLocalFrame() const {return _data.moment_local_frame;};
 
 	// get full data
-	Sai2Model::ForceSensorData getData() const {return _data;}
+	SaiModel::ForceSensorData getData() const {return _data;}
 
 	// Enable filtering of the force and moment data
 	void enableFilter(const double normalized_cutoff_freq);
@@ -66,21 +66,21 @@ public:
 
 private:
 	// handle to model interface if the sesnor is attached to a robot
-	std::shared_ptr<Sai2Model::Sai2Model> _robot;
+	std::shared_ptr<SaiModel::SaiModel> _robot;
 
 	// handle to object pose if the sensor is attached to an object
 	std::shared_ptr<Eigen::Affine3d> _object_pose;
 
 	// last updated data
-	Sai2Model::ForceSensorData _data;
+	SaiModel::ForceSensorData _data;
 
 	// filter for force and moment
 	bool _use_filter;
-	std::unique_ptr<Sai2Common::ButterworthFilter> _filter_force;
-	std::unique_ptr<Sai2Common::ButterworthFilter> _filter_moment;
+	std::unique_ptr<SaiCommon::ButterworthFilter> _filter_force;
+	std::unique_ptr<SaiCommon::ButterworthFilter> _filter_moment;
 
 };
 
-} // namespace Sai2Simulation
+} // namespace SaiSimulation
 
 #endif //FORCE_SENSOR_SIM_H

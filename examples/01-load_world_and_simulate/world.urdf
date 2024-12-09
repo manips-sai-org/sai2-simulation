@@ -3,7 +3,7 @@
 <world name="demo_world" gravity="0.0 0.0 -9.81">
 
 	<robot name="RRBot">
-		<model dir="${SAI2_MODEL_URDF_FOLDER}/simple_models" path="double_pendulum.urdf" name="double_pendulum" />
+		<model dir="${SAI_MODEL_URDF_FOLDER}/simple_models" path="double_pendulum.urdf" name="double_pendulum" />
 		<origin xyz="0.0 0.0 2.0" rpy="0 0 0" />
 		<visual showwireframe="off" showframes="on" />
 	</robot>

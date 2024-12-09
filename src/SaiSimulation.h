@@ -1,16 +1,16 @@
 /*
- * Sai2Simulation.h
+ * SaiSimulation.h
  *
  *  Created on: Dec 27, 2016
  *      Author: Shameek Ganguly
- *  Update: ported to sai2-simulation project on Nov 17, 2017
+ *  Update: ported to sai-simulation project on Nov 17, 2017
  *    By: Shameek Ganguly
  */
 
-#ifndef SAI2_SIMULATION_H
-#define SAI2_SIMULATION_H
+#ifndef SAI_SIMULATION_H
+#define SAI_SIMULATION_H
 
-#include <Sai2Model.h>
+#include <SaiModel.h>
 
 #include <Eigen/Geometry>
 #include <map>
@@ -19,15 +19,15 @@
 
 #include "force_sensor_sim/ForceSensorSim.h"
 
-// forward define from sai2-simulation
+// forward define from sai-simulation
 class cDynamicWorld;
 
-namespace Sai2Simulation {
+namespace SaiSimulation {
 
-class Sai2Simulation {
+class SaiSimulation {
 public:
 	/**
-	 * @brief Creates a simulation interface to a Sai2-Simulation engine.
+	 * @brief Creates a simulation interface to a Sai-Simulation engine.
 	 * Supports time integration, constraint-based contact and collision
 	 * resolution.
 	 * @param path_to_world_file A path to the file containing the model of the
@@ -35,10 +35,10 @@ public:
 	 * @param verbose To display information about the robot model creation in
 	 * the terminal or not.
 	 */
-	Sai2Simulation(const std::string& path_to_world_file, bool verbose = false);
+	SaiSimulation(const std::string& path_to_world_file, bool verbose = false);
 
-	// \brief Destructor to clean up internal Sai2-Simulation model
-	~Sai2Simulation() = default;
+	// \brief Destructor to clean up internal Sai-Simulation model
+	~SaiSimulation() = default;
 
 	/**
 	 * @brief Get degrees of freedom of a particular robot.
@@ -306,10 +306,10 @@ public:
 	 * @brief Get the All Force Sensor Data object for all the sensors that have
 	 * been added to the simulation
 	 *
-	 * @return const std::vector<Sai2Model::ForceSensorData> a vector of all the
+	 * @return const std::vector<SaiModel::ForceSensorData> a vector of all the
 	 * most recent force sensor data
 	 */
-	const std::vector<Sai2Model::ForceSensorData> getAllForceSensorData() const;
+	const std::vector<SaiModel::ForceSensorData> getAllForceSensorData() const;
 
 	/**
 	 * @brief Enable or disable the dynamics for a given object or robot
@@ -460,7 +460,7 @@ private:
 	std::shared_ptr<cDynamicWorld> _world;
 
 	std::map<std::string, std::string> _robot_filenames;
-	std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+	std::map<std::string, std::shared_ptr<SaiModel::SaiModel>> _robot_models;
 	std::map<std::string, Eigen::VectorXd> _applied_robot_torques;
 	std::map<std::string, Eigen::Matrix<double, 6, 1>> _applied_object_torques;
 
@@ -479,6 +479,6 @@ private:
 	std::map<std::string, Eigen::VectorXd> _dyn_objects_velocity;
 };
 
-}  // namespace Sai2Simulation
+}  // namespace SaiSimulation
 
-#endif	// SAI2_SIMULATION_H
+#endif	// SAI_SIMULATION_H

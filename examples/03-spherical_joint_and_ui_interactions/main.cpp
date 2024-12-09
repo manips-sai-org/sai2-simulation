@@ -2,9 +2,9 @@
 #include <string>
 #include <thread>
 
-#include "Sai2Graphics.h"
-#include "Sai2Model.h"
-#include "Sai2Simulation.h"
+#include "SaiGraphics.h"
+#include "SaiModel.h"
+#include "SaiSimulation.h"
 #include "unistd.h"
 
 using namespace std;
@@ -17,23 +17,23 @@ bool fSimulationRunning = false;
 std::map<std::string, Eigen::VectorXd> ui_torques;
 
 // sim
-void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
+void simulation(std::shared_ptr<SaiSimulation::SaiSimulation> sim);
 
 int main(int argc, char** argv) {
-	Sai2Model::URDF_FOLDERS["EXAMPLE_03_FOLDER"] =
+	SaiModel::URDF_FOLDERS["EXAMPLE_03_FOLDER"] =
 		string(EXAMPLES_FOLDER) + "/03-spherical_joint_and_ui_interactions";
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
-	auto sim = std::make_shared<Sai2Simulation::Sai2Simulation>(world_fname);
+	auto sim = std::make_shared<SaiSimulation::SaiSimulation>(world_fname);
 	std::vector<std::string> robot_names = sim->getRobotNames();
 	for (const auto& robot_name : robot_names) {
 		ui_torques[robot_name] = Eigen::VectorXd::Zero(sim->dof(robot_name));
 	}
 
 	// load graphics scene
-	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(
-		world_fname, "sai2-simulation example 03-spherical_joint", false);
+	auto graphics = std::make_shared<SaiGraphics::SaiGraphics>(
+		world_fname, "sai-simulation example 03-spherical_joint", false);
 	// enable ui force interaction on all robots
 	for (const auto& robot_name : robot_names) {
 		graphics->addUIForceInteraction(robot_name);
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 }
 
 //------------------------------------------------------------------------------
-void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
+void simulation(std::shared_ptr<SaiSimulation::SaiSimulation> sim) {
 	fSimulationRunning = true;
 	double timestep = sim->timestep();
 

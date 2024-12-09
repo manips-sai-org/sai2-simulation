@@ -3,7 +3,7 @@
  *
  *  Created on: Dec 23, 2016
  *      Author: Shameek Ganguly
- *  Update: ported to sai2-simulation project on Nov 17, 2017
+ *  Update: ported to sai-simulation project on Nov 17, 2017
  *    By: Shameek Ganguly
  */
 
@@ -14,7 +14,7 @@
 
 #include "dynamics3d.h"
 
-namespace Sai2Simulation {
+namespace SaiSimulation {
 /**
  * @brief Parse a URDF file and populate a dynamics3d world model from it.
  * @param filename URDF world model file to parse.
@@ -44,6 +44,6 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 
-}  // namespace Sai2Simulation
+}  // namespace SaiSimulation
 
 #endif	// URDF_TO_DYNAMICS3D_H

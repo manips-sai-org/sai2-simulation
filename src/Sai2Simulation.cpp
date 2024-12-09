@@ -1,13 +1,13 @@
 /*
- * Sai2Simulation.cpp
+ * SaiSimulation.cpp
  *
  *  Created on: Dec 27, 2016
  *      Author: Shameek Ganguly
- *  Update: ported to sai2-simulation project on Nov 17, 2017
+ *  Update: ported to sai-simulation project on Nov 17, 2017
  *		By: Shameek Ganguly
  */
 
-#include "Sai2Simulation.h"
+#include "SaiSimulation.h"
 
 #include <math/CMatrix3d.h>	 // chai math library
 
@@ -19,16 +19,16 @@
 #include "dynamics3d.h"
 #include "parser/URDFToDynamics3d.h"
 
-namespace Sai2Simulation {
+namespace SaiSimulation {
 
 // ctor
-Sai2Simulation::Sai2Simulation(const std::string& path_to_world_file,
+SaiSimulation::SaiSimulation(const std::string& path_to_world_file,
 							   bool verbose) {
 	resetWorld(path_to_world_file, verbose);
 	_timestep = 0.001;
 }
 
-void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
+void SaiSimulation::resetWorld(const std::string& path_to_world_file,
 								bool verbose) {
 	_is_paused = false;
 	_time = 0;
@@ -63,7 +63,7 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 		const auto& robot_name = pair.first;
 		const auto& robot_file = pair.second;
 		_robot_models[robot_name] =
-			std::make_shared<Sai2Model::Sai2Model>(robot_file, false);
+			std::make_shared<SaiModel::SaiModel>(robot_file, false);
 		_robot_models.at(robot_name)
 			->setTRobotBase(getRobotBaseTransform(robot_name));
 		_robot_models.at(robot_name)
@@ -81,7 +81,7 @@ void Sai2Simulation::resetWorld(const std::string& path_to_world_file,
 	}
 }
 
-const std::vector<std::string> Sai2Simulation::getRobotNames() const {
+const std::vector<std::string> SaiSimulation::getRobotNames() const {
 	std::vector<std::string> robot_names;
 	for (const auto& it : _robot_filenames) {
 		robot_names.push_back(it.first);
@@ -89,7 +89,7 @@ const std::vector<std::string> Sai2Simulation::getRobotNames() const {
 	return robot_names;
 }
 
-const std::vector<std::string> Sai2Simulation::getObjectNames() const {
+const std::vector<std::string> SaiSimulation::getObjectNames() const {
 	std::vector<std::string> object_names;
 	for (const auto& it : _dyn_objects_init_pose) {
 		object_names.push_back(it.first);
@@ -98,7 +98,7 @@ const std::vector<std::string> Sai2Simulation::getObjectNames() const {
 }
 
 // get dof
-const unsigned int Sai2Simulation::dof(const std::string& robot_name) const {
+const unsigned int SaiSimulation::dof(const std::string& robot_name) const {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot get dof for robot [" + robot_name +
@@ -107,7 +107,7 @@ const unsigned int Sai2Simulation::dof(const std::string& robot_name) const {
 	return _robot_models.at(robot_name)->dof();
 }
 
-const unsigned int Sai2Simulation::qSize(const std::string& robot_name) const {
+const unsigned int SaiSimulation::qSize(const std::string& robot_name) const {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot get dof for robot [" + robot_name +
@@ -116,7 +116,7 @@ const unsigned int Sai2Simulation::qSize(const std::string& robot_name) const {
 	return _robot_models.at(robot_name)->qSize();
 }
 
-void Sai2Simulation::setTimestep(const double dt) {
+void SaiSimulation::setTimestep(const double dt) {
 	if (dt <= 0) {
 		throw std::invalid_argument(
 			"simulation timestep cannot be 0 or negative");
@@ -130,7 +130,7 @@ void Sai2Simulation::setTimestep(const double dt) {
 	_timestep = dt;
 }
 
-void Sai2Simulation::enableJointLimits(const std::string& robot_name) {
+void SaiSimulation::enableJointLimits(const std::string& robot_name) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot enable joint limits robot [" + robot_name +
@@ -138,7 +138,7 @@ void Sai2Simulation::enableJointLimits(const std::string& robot_name) {
 	}
 	VectorXd q = getJointPositions(robot_name);
 	auto dyn_robot = _world->getBaseNode(robot_name);
-	for (const Sai2Model::JointLimit joint_limit :
+	for (const SaiModel::JointLimit joint_limit :
 		 _robot_models.at(robot_name)->jointLimits()) {
 		if (joint_limit.position_upper == std::numeric_limits<double>::max() ||
 			joint_limit.position_lower == -std::numeric_limits<double>::max()) {
@@ -159,14 +159,14 @@ void Sai2Simulation::enableJointLimits(const std::string& robot_name) {
 	}
 }
 
-void Sai2Simulation::disableJointLimits(const std::string& robot_name) {
+void SaiSimulation::disableJointLimits(const std::string& robot_name) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
 			"cannot disable joint limits robot [" + robot_name +
 			"] that does not exists in simulated world");
 	}
 	auto dyn_robot = _world->getBaseNode(robot_name);
-	for (const Sai2Model::JointLimit joint_limit :
+	for (const SaiModel::JointLimit joint_limit :
 		 _robot_models.at(robot_name)->jointLimits()) {
 		auto dyn_joint = dyn_robot->getJoint(joint_limit.joint_name);
 		dyn_joint->removeJointLimits();
@@ -174,7 +174,7 @@ void Sai2Simulation::disableJointLimits(const std::string& robot_name) {
 }
 
 // set joint positions
-void Sai2Simulation::setJointPositions(const std::string& robot_name,
+void SaiSimulation::setJointPositions(const std::string& robot_name,
 									   const Eigen::VectorXd& q) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -207,7 +207,7 @@ void Sai2Simulation::setJointPositions(const std::string& robot_name,
 }
 
 // read joint positions
-const Eigen::VectorXd Sai2Simulation::getJointPositions(
+const Eigen::VectorXd SaiSimulation::getJointPositions(
 	const std::string& robot_name) const {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -237,7 +237,7 @@ const Eigen::VectorXd Sai2Simulation::getJointPositions(
 }
 
 // read object pose
-const Eigen::Affine3d Sai2Simulation::getObjectPose(
+const Eigen::Affine3d SaiSimulation::getObjectPose(
 	const std::string& object_name) const {
 	if (dynamicObjectExistsInWorld(object_name)) {
 		return *_dyn_objects_pose.at(object_name);
@@ -250,7 +250,7 @@ const Eigen::Affine3d Sai2Simulation::getObjectPose(
 }
 
 // set object pose
-void Sai2Simulation::setObjectPose(const std::string& object_name,
+void SaiSimulation::setObjectPose(const std::string& object_name,
 								   const Eigen::Affine3d& pose) const {
 	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
@@ -271,7 +271,7 @@ void Sai2Simulation::setObjectPose(const std::string& object_name,
 }
 
 // set joint position for a single joint
-void Sai2Simulation::setJointPosition(const std::string& robot_name,
+void SaiSimulation::setJointPosition(const std::string& robot_name,
 									  unsigned int joint_id, double position) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -292,7 +292,7 @@ void Sai2Simulation::setJointPosition(const std::string& robot_name,
 }
 
 // set joint velocities
-void Sai2Simulation::setJointVelocities(const std::string& robot_name,
+void SaiSimulation::setJointVelocities(const std::string& robot_name,
 										const Eigen::VectorXd& dq) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -320,7 +320,7 @@ void Sai2Simulation::setJointVelocities(const std::string& robot_name,
 }
 
 // set joint velocity for a single joint
-void Sai2Simulation::setJointVelocity(const std::string& robot_name,
+void SaiSimulation::setJointVelocity(const std::string& robot_name,
 									  unsigned int joint_id, double velocity) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -341,7 +341,7 @@ void Sai2Simulation::setJointVelocity(const std::string& robot_name,
 }
 
 // read joint velocities
-const Eigen::VectorXd Sai2Simulation::getJointVelocities(
+const Eigen::VectorXd SaiSimulation::getJointVelocities(
 	const std::string& robot_name) const {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -368,7 +368,7 @@ const Eigen::VectorXd Sai2Simulation::getJointVelocities(
 }
 
 // read object velocities
-const Eigen::VectorXd Sai2Simulation::getObjectVelocity(
+const Eigen::VectorXd SaiSimulation::getObjectVelocity(
 	const std::string& object_name) const {
 	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
@@ -378,7 +378,7 @@ const Eigen::VectorXd Sai2Simulation::getObjectVelocity(
 	return _dyn_objects_velocity.at(object_name);
 }
 
-void Sai2Simulation::setObjectVelocity(
+void SaiSimulation::setObjectVelocity(
 	const std::string& object_name, const Eigen::Vector3d& linear_velocity,
 	const Eigen::Vector3d& angular_velocity) {
 	if (!dynamicObjectExistsInWorld(object_name)) {
@@ -405,7 +405,7 @@ void Sai2Simulation::setObjectVelocity(
 }
 
 // set joint torques
-void Sai2Simulation::setJointTorques(const std::string& robot_name,
+void SaiSimulation::setJointTorques(const std::string& robot_name,
 									 const Eigen::VectorXd& tau) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -428,7 +428,7 @@ void Sai2Simulation::setJointTorques(const std::string& robot_name,
 }
 
 // set joint torque for a single joint
-void Sai2Simulation::setJointTorque(const std::string& robot_name,
+void SaiSimulation::setJointTorque(const std::string& robot_name,
 									unsigned int joint_id, double tau) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -452,7 +452,7 @@ void Sai2Simulation::setJointTorque(const std::string& robot_name,
 	}
 }
 
-void Sai2Simulation::setObjectForceTorque(const std::string& object_name,
+void SaiSimulation::setObjectForceTorque(const std::string& object_name,
 										  const Eigen::Vector6d& tau) {
 	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
@@ -471,7 +471,7 @@ void Sai2Simulation::setObjectForceTorque(const std::string& object_name,
 		object_pose.rotation().transpose() * tau.tail<3>();
 }
 
-void Sai2Simulation::setAllJointTorquesInternal() {
+void SaiSimulation::setAllJointTorquesInternal() {
 	for (const auto& pair : _applied_robot_torques) {
 		auto robot_name = pair.first;
 		auto tau = pair.second;
@@ -515,7 +515,7 @@ void Sai2Simulation::setAllJointTorquesInternal() {
 }
 
 // read joint accelerations
-const Eigen::VectorXd Sai2Simulation::getJointAccelerations(
+const Eigen::VectorXd SaiSimulation::getJointAccelerations(
 	const std::string& robot_name) const {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -540,7 +540,7 @@ const Eigen::VectorXd Sai2Simulation::getJointAccelerations(
 	return ddq_ret;
 }
 
-const MatrixXd Sai2Simulation::computeAndGetMassMatrix(
+const MatrixXd SaiSimulation::computeAndGetMassMatrix(
 	const std::string& robot_name) {
 	if (!robotExistsInWorld(robot_name)) {
 		throw std::invalid_argument(
@@ -552,7 +552,7 @@ const MatrixXd Sai2Simulation::computeAndGetMassMatrix(
 }
 
 // integrate ahead
-void Sai2Simulation::integrate() {
+void SaiSimulation::integrate() {
 	if (_is_paused) {
 		return;
 	}
@@ -605,7 +605,7 @@ void Sai2Simulation::integrate() {
 	}
 }
 
-void Sai2Simulation::showContactInfo() {
+void SaiSimulation::showContactInfo() {
 	std::list<cDynamicBase*>::iterator i;
 	for (i = _world->m_dynamicObjects.begin();
 		 i != _world->m_dynamicObjects.end(); ++i) {
@@ -638,7 +638,7 @@ void Sai2Simulation::showContactInfo() {
 	}
 }
 
-void Sai2Simulation::showLinksInContact(
+void SaiSimulation::showLinksInContact(
 	const std::string robot_or_object_name) {
 	std::list<cDynamicBase*>::iterator i;
 	for (i = _world->m_dynamicObjects.begin();
@@ -666,24 +666,24 @@ void Sai2Simulation::showLinksInContact(
 }
 
 const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-Sai2Simulation::getContactList(const ::std::string& robot_name,
+SaiSimulation::getContactList(const ::std::string& robot_name,
 							   const std::string& link_name) const {
 	return _world->getContactList(robot_name, link_name);
 }
 
 const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-Sai2Simulation::getContactList(const ::std::string& object_name) const {
+SaiSimulation::getContactList(const ::std::string& object_name) const {
 	return _world->getContactList(object_name, object_link_name);
 }
 
-void Sai2Simulation::addSimulatedForceSensor(
+void SaiSimulation::addSimulatedForceSensor(
 	const std::string& robot_name, const std::string& link_name,
 	const Eigen::Affine3d transform_in_link,
 	const double filter_cutoff_frequency) {
 	if (!robotExistsInWorld(robot_name, link_name)) {
 		std::cout << "\n\nWARNING: trying to add a force sensor to an "
 					 "unexisting robot or link in "
-					 "Sai2Simulation::addSimulatedForceSensor\n"
+					 "SaiSimulation::addSimulatedForceSensor\n"
 				  << std::endl;
 		return;
 	}
@@ -698,7 +698,7 @@ void Sai2Simulation::addSimulatedForceSensor(
 	}
 	if (findSimulatedForceSensor(robot_name, link_name) != -1) {
 		std::cout << "\n\nWARNING: only one force sensor is supported per "
-					 "link in Sai2Simulation::addSimulatedForceSensor. Not "
+					 "link in SaiSimulation::addSimulatedForceSensor. Not "
 					 "adding the second one\n"
 				  << std::endl;
 		return;
@@ -708,12 +708,12 @@ void Sai2Simulation::addSimulatedForceSensor(
 		filter_cutoff_frequency * _timestep));
 }
 
-void Sai2Simulation::addSimulatedForceSensor(
+void SaiSimulation::addSimulatedForceSensor(
 	const std::string& object_name, const Eigen::Affine3d transform_in_link,
 	const double filter_cutoff_frequency) {
 	if (findSimulatedForceSensor(object_name, object_link_name) != -1) {
 		std::cout << "\n\nWARNING: only one force sensor is supported per "
-					 "link in Sai2Simulation::addSimulatedForceSensor. Not "
+					 "link in SaiSimulation::addSimulatedForceSensor. Not "
 					 "adding the second one\n"
 				  << std::endl;
 		return;
@@ -731,12 +731,12 @@ void Sai2Simulation::addSimulatedForceSensor(
 	} else {
 		std::cout << "\n\nWARNING: trying to add a force sensor to an "
 					 "unexisting object in "
-					 "Sai2Simulation::addSimulatedForceSensor\n"
+					 "SaiSimulation::addSimulatedForceSensor\n"
 				  << std::endl;
 	}
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedForce(
+Eigen::Vector3d SaiSimulation::getSensedForce(
 	const std::string& robot_name, const std::string& link_name,
 	const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
@@ -752,7 +752,7 @@ Eigen::Vector3d Sai2Simulation::getSensedForce(
 	return _force_sensors.at(sensor_index)->getForceWorldFrame();
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedForce(
+Eigen::Vector3d SaiSimulation::getSensedForce(
 	const std::string& object_name, const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(object_name, object_link_name);
 	if (sensor_index == -1) {
@@ -766,7 +766,7 @@ Eigen::Vector3d Sai2Simulation::getSensedForce(
 	return _force_sensors.at(sensor_index)->getForceWorldFrame();
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedMoment(
+Eigen::Vector3d SaiSimulation::getSensedMoment(
 	const std::string& robot_name, const std::string& link_name,
 	const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(robot_name, link_name);
@@ -782,7 +782,7 @@ Eigen::Vector3d Sai2Simulation::getSensedMoment(
 	return _force_sensors.at(sensor_index)->getMomentWorldFrame();
 }
 
-Eigen::Vector3d Sai2Simulation::getSensedMoment(
+Eigen::Vector3d SaiSimulation::getSensedMoment(
 	const std::string& object_name, const bool in_sensor_frame) const {
 	int sensor_index = findSimulatedForceSensor(object_name, object_link_name);
 	if (sensor_index == -1) {
@@ -796,16 +796,16 @@ Eigen::Vector3d Sai2Simulation::getSensedMoment(
 	return _force_sensors.at(sensor_index)->getMomentWorldFrame();
 }
 
-const std::vector<Sai2Model::ForceSensorData>
-Sai2Simulation::getAllForceSensorData() const {
-	std::vector<Sai2Model::ForceSensorData> sensor_data;
+const std::vector<SaiModel::ForceSensorData>
+SaiSimulation::getAllForceSensorData() const {
+	std::vector<SaiModel::ForceSensorData> sensor_data;
 	for (const auto& sensor : _force_sensors) {
 		sensor_data.push_back(sensor->getData());
 	}
 	return sensor_data;
 }
 
-const int Sai2Simulation::findSimulatedForceSensor(
+const int SaiSimulation::findSimulatedForceSensor(
 	const std::string& robot_or_object_name,
 	const std::string& link_name) const {
 	for (int i = 0; i < _force_sensors.size(); ++i) {
@@ -818,7 +818,7 @@ const int Sai2Simulation::findSimulatedForceSensor(
 	return -1;
 }
 
-const bool Sai2Simulation::robotExistsInWorld(
+const bool SaiSimulation::robotExistsInWorld(
 	const std::string& robot_name, const std::string link_name) const {
 	auto it = _robot_models.find(robot_name);
 	if (it == _robot_models.end()) {
@@ -830,7 +830,7 @@ const bool Sai2Simulation::robotExistsInWorld(
 	return true;
 }
 
-const bool Sai2Simulation::dynamicObjectExistsInWorld(
+const bool SaiSimulation::dynamicObjectExistsInWorld(
 	const std::string& object_name) const {
 	auto it = _dyn_objects_init_pose.find(object_name);
 	if (it == _dyn_objects_init_pose.end()) {
@@ -839,7 +839,7 @@ const bool Sai2Simulation::dynamicObjectExistsInWorld(
 	return true;
 }
 
-const bool Sai2Simulation::staticObjectExistsInWorld(
+const bool SaiSimulation::staticObjectExistsInWorld(
 	const std::string& object_name) const {
 	auto it = _static_objects_pose.find(object_name);
 	if (it == _static_objects_pose.end()) {
@@ -848,7 +848,7 @@ const bool Sai2Simulation::staticObjectExistsInWorld(
 	return true;
 }
 
-void Sai2Simulation::setDynamicsEnabled(const bool enabled,
+void SaiSimulation::setDynamicsEnabled(const bool enabled,
 										const string robot_or_object_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
 		if (base->m_name == robot_or_object_name) {
@@ -857,7 +857,7 @@ void Sai2Simulation::setDynamicsEnabled(const bool enabled,
 	}
 }
 
-void Sai2Simulation::setJointDamping(const double damping,
+void SaiSimulation::setJointDamping(const double damping,
 									 const string robot_or_object_name,
 									 const string joint_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
@@ -872,7 +872,7 @@ void Sai2Simulation::setJointDamping(const double damping,
 	}
 }
 
-void Sai2Simulation::setCollisionRestitution(const double restitution,
+void SaiSimulation::setCollisionRestitution(const double restitution,
 											 const string robot_or_object_name,
 											 const string link_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
@@ -888,13 +888,13 @@ void Sai2Simulation::setCollisionRestitution(const double restitution,
 	}
 }
 
-const double Sai2Simulation::getCollisionRestitution(
+const double SaiSimulation::getCollisionRestitution(
 	const std::string& object_name) const {
 	return getCollisionRestitution(object_name, object_link_name);
 }
 
 // get co-efficient of restitution: for a named robot and link
-const double Sai2Simulation::getCollisionRestitution(
+const double SaiSimulation::getCollisionRestitution(
 	const std::string& robot_name, const std::string& link_name) const {
 	if (!robotExistsInWorld(robot_name, link_name) &&
 		(!dynamicObjectExistsInWorld(robot_name) ||
@@ -909,7 +909,7 @@ const double Sai2Simulation::getCollisionRestitution(
 	return mat->getEpsilon();
 }
 
-void Sai2Simulation::setCoeffFrictionStatic(const double static_friction,
+void SaiSimulation::setCoeffFrictionStatic(const double static_friction,
 											const string robot_or_object_name,
 											const string link_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
@@ -925,13 +925,13 @@ void Sai2Simulation::setCoeffFrictionStatic(const double static_friction,
 	}
 }
 
-const double Sai2Simulation::getCoeffFrictionStatic(
+const double SaiSimulation::getCoeffFrictionStatic(
 	const std::string& object_name) const {
 	return getCoeffFrictionStatic(object_name, object_link_name);
 }
 
 // get co-efficient of static friction: for a named robot and link
-const double Sai2Simulation::getCoeffFrictionStatic(
+const double SaiSimulation::getCoeffFrictionStatic(
 	const std::string& robot_name, const std::string& link_name) const {
 	if (!robotExistsInWorld(robot_name, link_name) &&
 		(!dynamicObjectExistsInWorld(robot_name) ||
@@ -946,7 +946,7 @@ const double Sai2Simulation::getCoeffFrictionStatic(
 	return mat->getStaticFriction();
 }
 
-void Sai2Simulation::setCoeffFrictionDynamic(const double dynamic_friction,
+void SaiSimulation::setCoeffFrictionDynamic(const double dynamic_friction,
 											 const string robot_or_object_name,
 											 const string link_name) {
 	for (cDynamicBase* base : _world->m_dynamicObjects) {
@@ -962,13 +962,13 @@ void Sai2Simulation::setCoeffFrictionDynamic(const double dynamic_friction,
 	}
 }
 
-const double Sai2Simulation::getCoeffFrictionDynamic(
+const double SaiSimulation::getCoeffFrictionDynamic(
 	const std::string& object_name) const {
 	return getCoeffFrictionDynamic(object_name, object_link_name);
 }
 
 // get co-efficient of dynamic friction: for a named robot and link
-const double Sai2Simulation::getCoeffFrictionDynamic(
+const double SaiSimulation::getCoeffFrictionDynamic(
 	const std::string& robot_name, const std::string& link_name) const {
 	if (!robotExistsInWorld(robot_name, link_name) &&
 		(!dynamicObjectExistsInWorld(robot_name) ||
@@ -984,7 +984,7 @@ const double Sai2Simulation::getCoeffFrictionDynamic(
 }
 
 // get pose of robot base in the world frame
-const Eigen::Affine3d Sai2Simulation::getRobotBaseTransform(
+const Eigen::Affine3d SaiSimulation::getRobotBaseTransform(
 	const std::string& robot_name) const {
 	Eigen::Affine3d gToRobotBase;
 	const auto base = _world->getBaseNode(robot_name);
@@ -993,4 +993,4 @@ const Eigen::Affine3d Sai2Simulation::getRobotBaseTransform(
 	return gToRobotBase;
 }
 
-}  // namespace Sai2Simulation
+}  // namespace SaiSimulation

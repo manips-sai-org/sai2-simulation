@@ -2,8 +2,8 @@
 #include <string>
 #include <thread>
 
-#include "Sai2Graphics.h"
-#include "Sai2Simulation.h"
+#include "SaiGraphics.h"
+#include "SaiSimulation.h"
 #include "unistd.h"
 
 using namespace std;
@@ -14,20 +14,20 @@ const string world_fname =
 bool fSimulationRunning = false;
 
 // sim
-void simulation(shared_ptr<Sai2Simulation::Sai2Simulation> sim);
+void simulation(shared_ptr<SaiSimulation::SaiSimulation> sim);
 
 int main(int argc, char** argv) {
-	Sai2Model::URDF_FOLDERS["EXAMPLE_04_FOLDER"] =
+	SaiModel::URDF_FOLDERS["EXAMPLE_04_FOLDER"] =
 		string(EXAMPLES_FOLDER) + "/04-joint_limits_and_damping";
 	cout << "Loading URDF world model file: " << world_fname << endl;
 
 	// load simulation world
-	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_fname, false);
+	auto sim = make_shared<SaiSimulation::SaiSimulation>(world_fname, false);
 	const string robot_name = sim->getRobotNames()[0];
 
 	// load graphics scene
-	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(
-		world_fname, "sai2-simulation example 01-fixed_joint", false);
+	auto graphics = make_shared<SaiGraphics::SaiGraphics>(
+		world_fname, "sai-simulation example 01-fixed_joint", false);
 	graphics->addUIForceInteraction(robot_name);
 
 	cout << endl
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 }
 
 //------------------------------------------------------------------------------
-void simulation(shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
+void simulation(shared_ptr<SaiSimulation::SaiSimulation> sim) {
 	fSimulationRunning = true;
 	double timestep = sim->timestep();
 

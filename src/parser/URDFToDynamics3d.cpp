@@ -3,7 +3,7 @@
  *
  *  Created on: Dec 23, 2016
  *      Author: Shameek Ganguly
- *  Update: ported to sai2-simulation project on Nov 17, 2017
+ *  Update: ported to sai-simulation project on Nov 17, 2017
  *    By: Shameek Ganguly
  */
 
@@ -12,13 +12,13 @@
 #include <urdf/urdfdom/urdf_parser/include/urdf_parser/urdf_parser.h>
 #include <urdf/urdfdom_headers/urdf_model/include/urdf_model/model.h>
 
-#include "parser/Sai2ModelParserUtils.h"
+#include "parser/SaiModelParserUtils.h"
 
-typedef my_shared_ptr<Sai2Urdfreader::Link> LinkPtr;
-typedef const my_shared_ptr<const Sai2Urdfreader::Link> ConstLinkPtr;
-typedef my_shared_ptr<Sai2Urdfreader::Joint> JointPtr;
-typedef my_shared_ptr<Sai2Urdfreader::ModelInterface> ModelPtr;
-typedef my_shared_ptr<Sai2Urdfreader::World> WorldPtr;
+typedef my_shared_ptr<SaiUrdfreader::Link> LinkPtr;
+typedef const my_shared_ptr<const SaiUrdfreader::Link> ConstLinkPtr;
+typedef my_shared_ptr<SaiUrdfreader::Joint> JointPtr;
+typedef my_shared_ptr<SaiUrdfreader::ModelInterface> ModelPtr;
+typedef my_shared_ptr<SaiUrdfreader::World> WorldPtr;
 
 #include <Eigen/Core>
 using namespace Eigen;
@@ -41,14 +41,14 @@ using namespace chai3d;
 #define CDYN_ERROR_EPSILON 0.0001
 #define CDYN_DEFAULT_MAT_RESTITUTION 0.9
 
-namespace Sai2Simulation {
+namespace SaiSimulation {
 
 // load link collision properties from urdf link to dynamics3d link
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 static void loadLinkCollision(
 	cDynamicLink* link,
-	const my_shared_ptr<Sai2Urdfreader::Collision>& collision_ptr,
+	const my_shared_ptr<SaiUrdfreader::Collision>& collision_ptr,
 	const std::string& working_dirname = "./",
 	const Eigen::Matrix3d& joint_axis_alignment_rotation =
 		Eigen::Matrix3d::Identity()) {
@@ -56,9 +56,9 @@ static void loadLinkCollision(
 	tmp_mmesh->m_name = std::string("sai_dyn3d_link_mesh");
 	auto tmp_mesh = new cMesh();
 	const auto geom_type = collision_ptr->geometry->type;
-	if (geom_type == Sai2Urdfreader::Geometry::MESH) {
+	if (geom_type == SaiUrdfreader::Geometry::MESH) {
 		// downcast geometry ptr to mesh type
-		const auto mesh_ptr = dynamic_cast<const Sai2Urdfreader::Mesh*>(
+		const auto mesh_ptr = dynamic_cast<const SaiUrdfreader::Mesh*>(
 			collision_ptr->geometry.get());
 		assert(mesh_ptr);
 
@@ -67,10 +67,10 @@ static void loadLinkCollision(
 
 		std::string processed_filepath =
 			working_dirname + "/" + mesh_ptr->filename;
-		if (Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename) !=
+		if (SaiModel::ReplaceUrdfPathPrefix(mesh_ptr->filename) !=
 			mesh_ptr->filename) {
 			processed_filepath =
-				Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename);
+				SaiModel::ReplaceUrdfPathPrefix(mesh_ptr->filename);
 		}
 
 		if (processed_filepath.length() < 5) {
@@ -101,26 +101,26 @@ static void loadLinkCollision(
 		// apply scale
 		tmp_mmesh->scaleXYZ(mesh_ptr->scale.x, mesh_ptr->scale.y,
 							mesh_ptr->scale.z);
-	} else if (geom_type == Sai2Urdfreader::Geometry::BOX) {
+	} else if (geom_type == SaiUrdfreader::Geometry::BOX) {
 		// downcast geometry ptr to box type
-		const auto box_ptr = dynamic_cast<const Sai2Urdfreader::Box*>(
+		const auto box_ptr = dynamic_cast<const SaiUrdfreader::Box*>(
 			collision_ptr->geometry.get());
 		assert(box_ptr);
 		// create chai box mesh
 		chai3d::cCreateBox(tmp_mesh, box_ptr->dim.x, box_ptr->dim.y,
 						   box_ptr->dim.z);
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == Sai2Urdfreader::Geometry::SPHERE) {
+	} else if (geom_type == SaiUrdfreader::Geometry::SPHERE) {
 		// downcast geometry ptr to sphere type
-		const auto sphere_ptr = dynamic_cast<const Sai2Urdfreader::Sphere*>(
+		const auto sphere_ptr = dynamic_cast<const SaiUrdfreader::Sphere*>(
 			collision_ptr->geometry.get());
 		assert(sphere_ptr);
 		// create chai sphere mesh
 		chai3d::cCreateSphere(tmp_mesh, sphere_ptr->radius);
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == Sai2Urdfreader::Geometry::CYLINDER) {
+	} else if (geom_type == SaiUrdfreader::Geometry::CYLINDER) {
 		// downcast geometry ptr to cylinder type
-		const auto cylinder_ptr = dynamic_cast<const Sai2Urdfreader::Cylinder*>(
+		const auto cylinder_ptr = dynamic_cast<const SaiUrdfreader::Cylinder*>(
 			collision_ptr->geometry.get());
 		assert(cylinder_ptr);
 		// create chai sphere mesh
@@ -225,7 +225,7 @@ void URDFToDynamics3dWorld(
 	std::map<std::string, Eigen::Affine3d>& static_object_pose,
 	std::map<std::string, std::string>& robot_filenames, bool verbose) {
 	// load world urdf file
-	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
+	std::string resolved_filename = SaiModel::ReplaceUrdfPathPrefix(filename);
 	ifstream model_file(resolved_filename);
 	if (!model_file) {
 		cerr << "Error opening file '" << resolved_filename << "'." << endl;
@@ -244,7 +244,7 @@ void URDFToDynamics3dWorld(
 
 	// parse xml to URDF world model
 	assert(world);
-	WorldPtr urdf_world = Sai2Urdfreader::parseURDFWorld(model_xml_string);
+	WorldPtr urdf_world = SaiUrdfreader::parseURDFWorld(model_xml_string);
 	world->m_name = urdf_world->name_;
 	if (verbose) {
 		cout << "URDFToDynamics3dWorld: Starting model conversion to "
@@ -280,7 +280,7 @@ void URDFToDynamics3dWorld(
 		// load robot from file
 		URDFToDynamics3dRobot(
 			robot_spec->model_filename, robot, verbose,
-			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
+			SaiModel::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
 		assert(robot->m_name == robot_spec->model_name);
 
 		// overwrite robot name with custom name for this instance
@@ -292,7 +292,7 @@ void URDFToDynamics3dWorld(
 				"Different robots cannot have the same name in the world");
 		}
 		robot_filenames[robot->m_name] =
-			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir) +
+			SaiModel::ReplaceUrdfPathPrefix(robot_spec->model_working_dir) +
 			"/" + robot_spec->model_filename;
 	}
 
@@ -475,7 +475,7 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 
 	// read and parse xml string to urdf model
 	assert(model);
-	ModelPtr urdf_model = Sai2Urdfreader::parseURDF(model_xml_string);
+	ModelPtr urdf_model = SaiUrdfreader::parseURDF(model_xml_string);
 	model->m_name = urdf_model->getName();
 	if (verbose) {
 		cout
@@ -630,26 +630,26 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 		auto urdf_joint_type = urdf_joint->type;
 		int dyn3d_joint_type = -1;	// -1 will represent fixed joints
 		switch (urdf_joint_type) {
-			case Sai2Urdfreader::Joint::REVOLUTE:
+			case SaiUrdfreader::Joint::REVOLUTE:
 				dyn3d_joint_type = DYN_JOINT_REVOLUTE;
 				break;
-			case Sai2Urdfreader::Joint::PRISMATIC:
+			case SaiUrdfreader::Joint::PRISMATIC:
 				dyn3d_joint_type = DYN_JOINT_PRISMATIC;
 				break;
-			case Sai2Urdfreader::Joint::CONTINUOUS:
+			case SaiUrdfreader::Joint::CONTINUOUS:
 				dyn3d_joint_type = DYN_JOINT_CONTINUOUS;
 				break;
-			case Sai2Urdfreader::Joint::SPHERICAL:
+			case SaiUrdfreader::Joint::SPHERICAL:
 				dyn3d_joint_type = DYN_JOINT_SPHERICAL;
 				break;
 			// currently unsupported joint types:
-			case Sai2Urdfreader::Joint::FLOATING:
-			case Sai2Urdfreader::Joint::PLANAR:
+			case SaiUrdfreader::Joint::FLOATING:
+			case SaiUrdfreader::Joint::PLANAR:
 				cerr << "Unsupported joint type on joint " << joint_names[j]
 					 << endl;
 				abort();
 				break;
-			case Sai2Urdfreader::Joint::FIXED:	// This is true for ground links
+			case SaiUrdfreader::Joint::FIXED:	// This is true for ground links
 			default:
 				break;
 		}
@@ -661,9 +661,9 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 		int axis_type = DYN_AXIS_X;
 		Eigen::Matrix3d joint_axis_alignment_rotation =
 			Eigen::Matrix3d::Identity();
-		if (urdf_joint_type == Sai2Urdfreader::Joint::REVOLUTE ||
-			urdf_joint_type == Sai2Urdfreader::Joint::PRISMATIC ||
-			urdf_joint_type == Sai2Urdfreader::Joint::CONTINUOUS) {
+		if (urdf_joint_type == SaiUrdfreader::Joint::REVOLUTE ||
+			urdf_joint_type == SaiUrdfreader::Joint::PRISMATIC ||
+			urdf_joint_type == SaiUrdfreader::Joint::CONTINUOUS) {
 			// determine the joint axis
 			Eigen::Vector3d joint_axis = Eigen::Vector3d(
 				urdf_joint->axis.x, urdf_joint->axis.y, urdf_joint->axis.z);
@@ -789,4 +789,4 @@ void URDFToDynamics3dRobot(const std::string& filename, cDynamicBase* model,
 	}
 }
 
-}  // namespace Sai2Simulation
+}  // namespace SaiSimulation

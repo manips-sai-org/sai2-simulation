@@ -3,12 +3,12 @@
 <world name="demo_world" gravity="0.0 0.0 -9.81">
 
 	<robot name="RBot1">
-		<model dir="${SAI2_MODEL_URDF_FOLDER}/simple_models" path="simple_pendulum.urdf" name="simple_pendulum" />
+		<model dir="${SAI_MODEL_URDF_FOLDER}/simple_models" path="simple_pendulum.urdf" name="simple_pendulum" />
 		<origin xyz="0.0 -1.2 0.0" rpy="0.5 0 0" />
 	</robot>
 
 	<robot name="RBot2">
-		<model dir="${SAI2_MODEL_URDF_FOLDER}/simple_models" path="simple_pendulum.urdf" name="simple_pendulum" />
+		<model dir="${SAI_MODEL_URDF_FOLDER}/simple_models" path="simple_pendulum.urdf" name="simple_pendulum" />
 		<origin xyz="0.0 1.2 0.0" rpy="-0.35 0 0" />
 	</robot>
 

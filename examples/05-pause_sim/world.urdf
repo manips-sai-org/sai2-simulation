@@ -3,7 +3,7 @@
 <world name="demo_world" gravity="0.0 0.0 -9.81">
 
 	<robot name="RBot">
-		<model dir="${SAI2_MODEL_URDF_FOLDER}/simple_models" path="simple_pendulum.urdf" name="simple_pendulum" />
+		<model dir="${SAI_MODEL_URDF_FOLDER}/simple_models" path="simple_pendulum.urdf" name="simple_pendulum" />
 	</robot>
 
 	<static_object name="Floor">

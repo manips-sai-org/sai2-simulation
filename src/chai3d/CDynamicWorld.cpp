@@ -289,7 +289,7 @@ cDynamicWorld::getContactList(const ::std::string& robot_name,
 					// robots, but not for static and dynamic objects
 					// TODO: figure out what is happening and beware of
 					// potential bugs because of this
-					if(link_name == Sai2Simulation::object_link_name) {
+					if(link_name == SaiSimulation::object_link_name) {
 						current_force(l) = contact->m_globalNormalForce(l) +
 											contact->m_globalFrictionForce(l);
 					} else {

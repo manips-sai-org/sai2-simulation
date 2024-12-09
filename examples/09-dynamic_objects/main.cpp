@@ -1,5 +1,5 @@
-#include <Sai2Graphics.h>
-#include <Sai2Simulation.h>
+#include <SaiGraphics.h>
+#include <SaiSimulation.h>
 
 #include <iostream>
 #include <string>
@@ -13,7 +13,7 @@ const string world_file =
 	string(EXAMPLES_FOLDER) + "/09-dynamic_objects/world.urdf";
 bool fSimulationRunning = false;
 
-void simrun(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
+void simrun(std::shared_ptr<SaiSimulation::SaiSimulation> sim) {
 	const double sim_timestep = 0.001;
 	sim->setTimestep(sim_timestep);
 	fSimulationRunning = true;
@@ -27,7 +27,7 @@ int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load simulation world
-	auto sim = make_shared<Sai2Simulation::Sai2Simulation>(world_file);
+	auto sim = make_shared<SaiSimulation::SaiSimulation>(world_file);
 	sim->setCollisionRestitution(0.1);
 	sim->setCoeffFrictionStatic(0.8);
 	for (const auto& object_name : sim->getObjectNames()) {
@@ -36,7 +36,7 @@ int main() {
 	}
 
 	// load graphics scene
-	auto graphics = make_shared<Sai2Graphics::Sai2Graphics>(world_file);
+	auto graphics = make_shared<SaiGraphics::SaiGraphics>(world_file);
 	for (const auto& object_name : sim->getObjectNames()) {
 		graphics->addUIForceInteraction(object_name);
 	}

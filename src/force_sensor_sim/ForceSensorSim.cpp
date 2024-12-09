@@ -1,14 +1,14 @@
 #include "ForceSensorSim.h"
 
-namespace Sai2Simulation {
+namespace SaiSimulation {
 
 ForceSensorSim::ForceSensorSim(const std::string& robot_name,
 							   const std::string& link_name,
 							   const Eigen::Affine3d& transform_in_link,
-							   std::shared_ptr<Sai2Model::Sai2Model> robot,
+							   std::shared_ptr<SaiModel::SaiModel> robot,
 							   const double filter_normalized_cutoff_freq)
 	: _robot(robot) {
-	_data = Sai2Model::ForceSensorData();
+	_data = SaiModel::ForceSensorData();
 	_data.robot_or_object_name = robot_name;
 	_data.link_name = link_name;
 	_data.transform_in_link = transform_in_link;
@@ -31,7 +31,7 @@ ForceSensorSim::ForceSensorSim(const std::string& object_name,
 							   std::shared_ptr<Eigen::Affine3d> object_pose,
 							   const double filter_normalized_cutoff_freq)
 	: _object_pose(object_pose) {
-	_data = Sai2Model::ForceSensorData();
+	_data = SaiModel::ForceSensorData();
 	_data.robot_or_object_name = object_name;
 	_data.link_name = link_name;
 	_data.transform_in_link = transform_in_link;
@@ -106,9 +106,9 @@ void ForceSensorSim::update(const std::shared_ptr<cDynamicWorld> dyn_world) {
 void ForceSensorSim::enableFilter(const double normalized_cutoff_freq) {
 	_use_filter = true;
 	_filter_force.reset(
-		new Sai2Common::ButterworthFilter(normalized_cutoff_freq));
+		new SaiCommon::ButterworthFilter(normalized_cutoff_freq));
 	_filter_moment.reset(
-		new Sai2Common::ButterworthFilter(normalized_cutoff_freq));
+		new SaiCommon::ButterworthFilter(normalized_cutoff_freq));
 }
 
-}  // namespace Sai2Simulation
+}  // namespace SaiSimulation

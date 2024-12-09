@@ -1,8 +1,8 @@
-## Project name: sai2-simulation (version: 2.0.0)
+## Project name: sai-simulation (version: 2.0.0)
 This project uses Semantic Versioning (http://semver.org/).
 
 ### Project short description:
-The Sai2-Simulation library implements a complete multi-articulated body 
+The Sai-Simulation library implements a complete multi-articulated body 
 simulation system with the following components:
 
 * Articulated body specification
@@ -13,8 +13,8 @@ simulation system with the following components:
 
 ### SAI library dependencies:
 Chai3d: https://github.com/manips-sai-org/chai3d
-sai2-urdfreader : https://github.com/manips-sai-org/sai2-urdfreader
-sai2-common : https://github.com/manips-sai-org/sai2-common
+sai-urdfreader : https://github.com/manips-sai-org/sai-urdfreader
+sai-common : https://github.com/manips-sai-org/sai-common
 
 ### Other dependencies
 freeglut3, libxmu, libstdc++.
@@ -28,7 +28,7 @@ cmake .. && make -j4
 ### Uninstallation instructions: 
 ```
 rm -r build
-rm -r ~/.cmake/packages/SAI2-SIMULATION
+rm -r ~/.cmake/packages/SAI-SIMULATION
 ```
 
 ### Getting started:

@@ -1,9 +1,9 @@
 // This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Sai2Simulation virtual world. A graphics model
+// with physics and contact in a SaiSimulation virtual world. A graphics model
 // of it is also shown using Chai3D.
 
-#include <Sai2Graphics.h>
-#include <Sai2Simulation.h>
+#include <SaiGraphics.h>
+#include <SaiSimulation.h>
 
 #include <iostream>
 #include <string>
@@ -18,16 +18,16 @@ const string link_name = "sensor_link";
 unsigned long long simulation_counter = 0;
 
 int main() {
-	Sai2Model::URDF_FOLDERS["EXAMPLE_08_FOLDER"] =
+	SaiModel::URDF_FOLDERS["EXAMPLE_08_FOLDER"] =
 		string(EXAMPLES_FOLDER) + "/08-force_sensor";
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load simulation world
-	auto sim = new Sai2Simulation::Sai2Simulation(world_file);
+	auto sim = new SaiSimulation::SaiSimulation(world_file);
 	sim->setTimestep(0.01);
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file);
+	auto graphics = new SaiGraphics::SaiGraphics(world_file);
 
 	// add simulated force sensor
 	Eigen::Affine3d T_link_sensor = Eigen::Affine3d::Identity();
